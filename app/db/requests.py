@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import asdict
 
 from app.db.engine import async_session
 from app.db.models import UserBase, LotBase, Status
@@ -28,7 +29,38 @@ async def deposit_balance(tg_id: BigInteger, stars: int):
         user.balance += stars
         await session.commit()
 
-async def get_data(tg_id: BigInteger):
+async def get_user_data(tg_id: BigInteger):
     async with async_session() as session:
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tg_id))
         return  user
+
+async def get_lot_data(lot_id: BigInteger):
+    async with async_session() as session:
+        lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
+        return lot
+
+async def get_new_lots():
+    async with async_session() as session:
+        lots = await session.scalars(select(LotBase).where(LotBase.is_post==False))
+        lots_list = [
+            {key: getattr(lot, key) for key in lot.__table__.columns.keys()}
+            for lot in lots
+        ]
+        print('\n\n\n\n')
+        print(lots_list)
+        print('\n\n\n\n')
+        return lots_list
+
+async def approve_lot(lot_id: BigInteger):
+    async with async_session() as session:
+        lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
+        lot.is_post = True
+        await session.commit()
+
+async def reject_lot(lot_id: BigInteger, tg_id: BigInteger):
+    async with async_session() as session:
+        lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
+        user = await get_user_data(tg_id)
+        user.lots += -1
+        await session.delete(lot)
+        await session.commit()
