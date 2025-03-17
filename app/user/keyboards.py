@@ -2,7 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='🎫Создать лот')],
-    [KeyboardButton(text='🪪Профиль'), KeyboardButton(text='🛠️Тех. поддержка')] #KeyboardButton(text='📜Ваши Лоты'),
+    [KeyboardButton(text='🪪Профиль'),KeyboardButton(text='Вывести ⭐'), KeyboardButton(text='🛠️Тех. поддержка')] #KeyboardButton(text='📜Ваши Лоты'),
 ],
     resize_keyboard=True,
     input_field_placeholder='Выберите пункт меню')
