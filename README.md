@@ -44,9 +44,9 @@ cd auction-bot
 poetry install
 ```
 
-3. Create a config.py file based on example_config.py:
+3. Add .env file with values from config.py:
 ```bash
-cp example_config.py config.py
+touch .env 
 ```
 
 ### Launch
