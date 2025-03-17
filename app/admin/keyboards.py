@@ -8,3 +8,9 @@ admin_menu = ReplyKeyboardMarkup(keyboard=[
     input_field_placeholder='Выберите пункт меню')
 
 tech_channel_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Перейти в канал', url='https://t.me/+szBkT23ZFP1lMWQy')]])
+
+
+tech_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Написать в тех. поддержку ⚙',
+                          url='https://t.me/auction_saharok_bot?start=auction_saharok_bot')]
+])

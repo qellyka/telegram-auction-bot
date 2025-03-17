@@ -19,7 +19,7 @@ admin_router = Router()
 
 admin_router.message.outer_middleware(UserDBCheckMiddleware())
 
-@admin_router.message(IsAdmin(), CommandStart())
+@admin_router.message(IsAdmin(), Command('menu'))
 async def menu(message: Message):
     await message.answer('Выберете, что хотите сделать в меню', reply_markup=kb.admin_menu)
 
@@ -56,19 +56,27 @@ async def approve_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split('_')[-1])
     await rq.approve_lot(lot_id=lot_id)
     lot = await rq.get_lot_data(lot_id=lot_id)
+    user = await rq.get_user_data_id(lot.user_id)
     await cb.bot.send_photo(chat_id='@auction_saharok',
                             photo=lot.photo_id,
                             caption=f'Стартовая цена: {lot.starter_price}⭐\n'
                                     f'Цена перебивки: {lot.real_price + lot.real_price / 100 * 5}⭐\n'
                                     f'Цена моментальной покупки: {lot.moment_buy_price}⭐\n'
                                     f'Продавец: {lot.seller}\n'f''
-                                    f'Время окончания: {lot.completion_time}\n',
+                                    f'Время окончания: {lot.completion_time.strftime("%Y-%m-%d %H:%M:%S")}\n',
                               )
     await cb.answer('Лот №' + str(lot_id) + ' одобрен.')
+    await cb.bot.send_message(chat_id=user.telegram_id,
+                              text='Ваш лот был одобрен и выставлен на продажу.')
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r'^reject_lot_\d+$', cb.data))
 async def reject_lot(cb: CallbackQuery):
     print('Я ЕБАЛ БАБАЙКУ')
     lot_id = int(cb.data.split('_')[-1])
+    lot = await rq.get_lot_data(lot_id=lot_id)
+    user = await rq.get_user_data_id(lot.user_id)
     await rq.reject_lot(lot_id=lot_id, tg_id=cb.from_user.id)
     await cb.answer('Лот №' + str(lot_id) + ' отклонен.')
+    await cb.bot.send_message(chat_id=user.telegram_id,
+                              text='Ваш лот был отклонен. За подробностями обращайтесь в тех. поддержку.',
+                              reply_markup=kb.tech_bot_menu)
