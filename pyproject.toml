@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "auction-bot"
+version = "0.1.0"
+description = ""
+authors = ["qellyka <qellyka@proton.me>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aiogram = "^3.18.0"
+python-dotenv = "^1.0.1"
+sqlalchemy = "^2.0.39"
+psycopg = "^3.2.6"
+psycopg-binary = "^3.2.6"
+asyncpg = "^0.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
