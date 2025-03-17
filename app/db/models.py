@@ -41,4 +41,5 @@ class LotBase(Base):
     completion_time: Mapped[datetime.datetime]
     buyer: Mapped[Optional[str]]
     seller: Mapped[str]
+    is_post: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     status: Mapped[Status]
