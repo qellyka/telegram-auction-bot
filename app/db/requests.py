@@ -34,6 +34,11 @@ async def get_user_data(tg_id: BigInteger):
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tg_id))
         return  user
 
+async def get_user_data_id(tid: BigInteger):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.id==tid))
+        return  user
+
 async def get_lot_data(lot_id: BigInteger):
     async with async_session() as session:
         lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
@@ -63,4 +68,9 @@ async def reject_lot(lot_id: BigInteger, tg_id: BigInteger):
         user = await get_user_data(tg_id)
         user.lots -= 1
         await session.delete(lot)
+        await session.commit()
+
+async def set_new_user(user: UserBase):
+    async with async_session() as session:
+        user.is_new = False
         await session.commit()
