@@ -41,7 +41,7 @@ async def cmd_start(message: Message):
 
 @user_router.message(IsUser(), F.text == "🪪Профиль")
 async def profile(message: Message):
-    user = await rq.get_data(message.from_user.id)
+    user = await rq.get_user_data(message.from_user.id)
     await message.answer(f'Профиль:  {message.from_user.username} \n'
                          f'Количество лотов:  {user.lots} \n'
                          f'Баланс:  {user.balance}⭐ \n',
