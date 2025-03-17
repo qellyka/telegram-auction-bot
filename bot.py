@@ -22,3 +22,5 @@ if __name__ == '__main__':
         asyncio.run(main())
     except KeyboardInterrupt:
         print('Exit')
+    except ConnectionRefusedError:
+        print('The database is not working or the connection link is incorrect')
