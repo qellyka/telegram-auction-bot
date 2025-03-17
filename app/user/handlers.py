@@ -57,9 +57,9 @@ async def create_lot(message: Message):
     await message.answer('Чтобы обратиться в службу поддержки напишите перейдите в нашего бота.',
                          reply_markup=kb.tech_bot_menu)
 
-@user_router.message(IsUser(), F.text == "📜Ваши Лоты")
+@user_router.message(IsUser(), F.text == "Вывести ⭐")
 async def create_lot(message: Message):
-    await message.answer('ХЗ, ПОКА НЕ РАБОТАЕМ.',
+    await message.answer('Если вы хотите вывести звезды, то напишите в поддержку.',
                          reply_markup=kb.tech_bot_menu)
 
 
