@@ -74,7 +74,7 @@ auction-bot/
 │   │   └── middlewares.py  # Middleware handlers
 │   ├── bot.py              # Main bot file
 │   └── config.py           # Bot configuration
-├── example_config.py       # Configuration example
+├── config.py               # Configuration 
 ├── pyproject.toml          # Poetry configuration
 └── poetry.lock             # Project dependencies
 ```
