@@ -2,7 +2,7 @@ import types
 
 from aiogram import F, Router, types
 
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, PreCheckoutQuery
 
 from aiogram.fsm.state import State, StatesGroup
@@ -36,31 +36,46 @@ class CreateLot(StatesGroup):
 
 @user_router.message(IsUser(), CommandStart())
 async def cmd_start(message: Message):
-    await message.answer('Привет!',
+    user = await rq.get_user_data(message.from_user.id)
+    print("БАБАЙКА - ",user.username,
+          "\n БАБАЙКА НОВАЯ? - ", user.is_new)
+    if user.is_new:
+        await message.answer("👋Привет, это бот Аукцион Saharok's/richa\n\n"
+                                  "🕒Мы работаем: \n"
+                                  "8:00 - 23:00мск, в это время вам ответят в течение 5 - 10 минут!\n\n"
+                                  "📌Заказы, пришедшие с 23:00 до 8:00, будут выполнены утром, в порядке очереди.",
                          reply_markup=kb.main_menu)
+        await rq.set_new_user(user)
+    else:
+        await message.answer(text='Выберете, что хотите сделать в меню',
+                             reply_markup=kb.main_menu)
+
+@user_router.message(IsUser(), Command('menu'))
+async def menu(message: Message):
+    await message.answer('Выберете, что хотите сделать в меню', reply_markup=kb.main_menu)
 
 @user_router.message(IsUser(), F.text == "🪪Профиль")
 async def profile(message: Message):
     user = await rq.get_user_data(message.from_user.id)
-    await message.answer(f'Профиль:  {message.from_user.username} \n'
-                         f'Количество лотов:  {user.lots} \n'
-                         f'Баланс:  {user.balance}⭐ \n',
+    await message.answer(f'👤 Имя пользователя:  {message.from_user.username} \n'
+                         f'📍 Количество лотов:  {user.lots} \n'
+                         f'💰 Ваш баланс:  {user.balance}⭐ \n',
                          reply_markup=kb.profile_menu)
 
 @user_router.message(IsUser(), F.text == "🎫Создать лот")
 async def create_lot(message: Message, state: FSMContext):
-    await message.answer('Отправьте фотографию подарка, который вы выставляете на продажу.')
+    await message.answer('📷 Пришлите фото подарка, который вы хотите выставить на продажу(владельца можно замазать). 🎁')
     await state.set_state(CreateLot.photo)
 
 @user_router.message(IsUser(), F.text == "🛠️Тех. поддержка")
 async def create_lot(message: Message):
-    await message.answer('Чтобы обратиться в службу поддержки напишите перейдите в нашего бота.',
+    await message.answer('❓Если у вас возникли вопросы, то перейдите в нашего бота, чтобы обратиться в службу поддержки ✅',
                          reply_markup=kb.tech_bot_menu)
 
 @user_router.message(IsUser(), F.text == "Вывести ⭐")
 async def create_lot(message: Message):
-    await message.answer('Если вы хотите вывести звезды, то напишите в поддержку.',
-                         reply_markup=kb.tech_bot_menu)
+    await message.answer('⚙ Для вывода звёзд, напишите в бот для вывода.',
+                         reply_markup=kb.withdraw_bot_menu)
 
 
 # Созданние лота
@@ -70,20 +85,20 @@ async def create_lot(message: Message):
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(photo_id=message.photo[-1].file_id)
     await state.set_state(CreateLot.starter_price)
-    await message.answer('Теперь введите пожалуйста стартовую цену в ⭐(1.65руб).')
+    await message.answer('🌟 Введите  стартовую цену в звёздах, ⭐️=1,65₽.')
 
 @user_router.message(IsUser(), CreateLot.starter_price)
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(starter_price=int(message.text))
     await state.set_state(CreateLot.completion_time)
-    await message.answer('Теперь введите цифру, от 1 до 24 - кол-во часов через которое лот будет закрыт, если его никто не выкупил.')
+    await message.answer('🕒 Введите кол-во часов (от 1 до 24) через которое лот будет закрыт, если его не выкупят. 🕒')
 
 @user_router.message(IsUser(), CreateLot.completion_time)
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(hours=int(message.text))
     data = await state.get_data()
     await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
-    await message.answer('Ваш лот был успешно добавлен!')
+    await message.answer('Ваш лот был отправлен на модерацию, после проверки он будет опубликован и вам прийдёт уведомление.')
     await state.clear()
 
 
@@ -94,7 +109,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.answer('')
     await state.set_state(DepositBalance.number_stars)
-    await cb.message.edit_text('Введите на какое количество здвезд вы хотите пополнить сво баланс. Минимальное кол-во звезд - 50⭐, максимальное - 9000⭐.')
+    await cb.message.edit_text('✍ Введите кол-во звезд,на которое вы хотите пополнить свой баланс. 💰')
 
 @user_router.message(IsUser(), DepositBalance.number_stars)
 async def deposit_balance_s(message: Message, state: FSMContext):
@@ -117,7 +132,7 @@ async def deposit_balance_s(message: Message, state: FSMContext):
             prices=[types.LabeledPrice(label=f'Покупка {data["stars"]}⭐', amount=int(data['stars']*1.65*100))]
         )
     else:
-        await message.answer("Пожалуйста отправьте числовое значение, например 100.")
+        await message.answer("📌 Минимальное числовое значение 50, а максимальное 15 000 📌")
 
 @user_router.pre_checkout_query(lambda query: True)
 async def pre_checkout_query(pcq: PreCheckoutQuery):
@@ -127,4 +142,4 @@ async def pre_checkout_query(pcq: PreCheckoutQuery):
 async def process_suc_payment(message: Message):
     stars = int(message.successful_payment.invoice_payload.split('_')[-1])
     await rq.deposit_balance(tg_id=message.from_user.id, stars=stars)
-    await message.answer(f"Вам успешно зачисленны {stars}⭐")
+    await message.answer(f"🎊 Вам успешно зачислено {stars}⭐️!")
