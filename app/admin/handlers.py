@@ -23,10 +23,10 @@ admin_router.message.outer_middleware(UserDBCheckMiddleware())
 async def menu(message: Message):
     await message.answer('Выберете, что хотите сделать в меню', reply_markup=kb.admin_menu)
 
-
-
-
-
+@admin_router.message(IsAdmin(), F.text == '🛠️Вопросы пользователей')
+async def tech_channel(message: Message):
+    await message.answer('Чтобы посмотреть вопросы пользователей напишите перейдите в чат техподдержки.',
+                         reply_markup=kb.tech_channel_menu)
 
 @admin_router.message(IsAdmin(), F.text == '🎫Посмотреть новые лоты')
 async def view_new_lots(message: Message):
