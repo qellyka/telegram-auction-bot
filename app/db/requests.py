@@ -61,6 +61,6 @@ async def reject_lot(lot_id: BigInteger, tg_id: BigInteger):
     async with async_session() as session:
         lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
         user = await get_user_data(tg_id)
-        user.lots += -1
+        user.lots -= 1
         await session.delete(lot)
         await session.commit()
