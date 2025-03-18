@@ -11,10 +11,15 @@ from typing import Optional
 class Base(AsyncAttrs, DeclarativeBase):
     pass
 
-class Status(enum.Enum):
+class LotStatus(enum.Enum):
     bidding = "bidding"
     sold_out = "sold_out"
     time_over = "time_over"
+
+class LotModStatus(enum.Enum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    PENDING = "pending"
 
 class UserBase(Base):
     __tablename__ = 'users'
@@ -42,5 +47,5 @@ class LotBase(Base):
     completion_time: Mapped[datetime.datetime]
     buyer: Mapped[Optional[str]]
     seller: Mapped[str]
-    is_post: Mapped[bool] = mapped_column(Boolean, default=False)
-    status: Mapped[Status]
+    is_post: Mapped[LotModStatus]
+    status: Mapped[LotStatus]
