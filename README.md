@@ -8,11 +8,8 @@ Telegram Auction Bot is a platform that allows users to create auctions and list
 
 ### Main Features:
 - Creating auctions with various settings (start/end time, starting price)
-- Listing lots with descriptions and photos
+- Listing lots
 - Bidding system with notifications
-- Auction and transaction history
-- User ratings
-- Filtering and searching by lot categories
 
 ## 🛠️ Technologies
 
