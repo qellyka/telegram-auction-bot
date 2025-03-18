@@ -66,8 +66,11 @@ async def approve_lot(cb: CallbackQuery):
                                     f'Время окончания: {lot.completion_time.strftime("%Y-%m-%d %H:%M:%S")}\n',
                               )
     await cb.answer('Лот №' + str(lot_id) + ' одобрен.')
-    await cb.bot.send_message(chat_id=user.telegram_id,
+    await cb.message.delete()
+    message = await cb.bot.send_message(chat_id=user.telegram_id,
                               text='Ваш лот был одобрен и выставлен на продажу.')
+    await cb.bot.send_message(chat_id=user.telegram_id,
+                        text=f'Ссылка на ваш лот: https://t.me/auction_saharok/{message.message_id}')
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r'^reject_lot_\d+$', cb.data))
 async def reject_lot(cb: CallbackQuery):
@@ -77,6 +80,7 @@ async def reject_lot(cb: CallbackQuery):
     user = await rq.get_user_data_id(lot.user_id)
     await rq.reject_lot(lot_id=lot_id, tg_id=cb.from_user.id)
     await cb.answer('Лот №' + str(lot_id) + ' отклонен.')
+    await cb.message.delete()
     await cb.bot.send_message(chat_id=user.telegram_id,
                               text='Ваш лот был отклонен. За подробностями обращайтесь в тех. поддержку.',
                               reply_markup=kb.tech_bot_menu)
