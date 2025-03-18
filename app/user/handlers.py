@@ -30,22 +30,16 @@ class CreateLot(StatesGroup):
     starter_price = State()
     completion_time = State()
 
-
-# Работа с меню
-
-
 @user_router.message(IsUser(), CommandStart())
 async def cmd_start(message: Message):
     user = await rq.get_user_data(message.from_user.id)
-    print("БАБАЙКА - ",user.username,
-          "\n БАБАЙКА НОВАЯ? - ", user.is_new)
     if user.is_new:
         await message.answer("👋Привет, это бот Аукцион Saharok's/richa\n\n"
                                   "🕒Мы работаем: \n"
                                   "8:00 - 23:00мск, в это время вам ответят в течение 5 - 10 минут!\n\n"
                                   "📌Заказы, пришедшие с 23:00 до 8:00, будут выполнены утром, в порядке очереди.",
                          reply_markup=kb.main_menu)
-        await rq.set_new_user(user)
+        await rq.set_new_user(message.from_user.id)
     else:
         await message.answer(text='Выберете, что хотите сделать в меню',
                              reply_markup=kb.main_menu)
@@ -77,10 +71,6 @@ async def create_lot(message: Message):
     await message.answer('⚙ Для вывода звёзд, напишите в бот для вывода.',
                          reply_markup=kb.withdraw_bot_menu)
 
-
-# Созданние лота
-
-
 @user_router.message(IsUser(), F.photo, CreateLot.photo)
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(photo_id=message.photo[-1].file_id)
@@ -98,12 +88,13 @@ async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(hours=int(message.text))
     data = await state.get_data()
     await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
+    await message.answer_photo(photo=data['photo_id'],
+                               caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                       f'Время окончания: {data["hours"]}\n'
+                                       f'Продавец: {message.from_user.username}\n'
+                               )
     await message.answer('Ваш лот был отправлен на модерацию, после проверки он будет опубликован и вам прийдёт уведомление.')
     await state.clear()
-
-
-# Пополнение баланса
-
 
 @user_router.callback_query(IsUser(), F.data == 'deposit_balance')
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
