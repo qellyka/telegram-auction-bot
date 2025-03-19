@@ -2,10 +2,12 @@ from aiogram import F, Router, types
 
 import re
 
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton
-
+from aiogram.filters import Command
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.middlewares import UserDBCheckMiddleware
+
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
 import app.db.requests as rq
 
@@ -13,11 +15,12 @@ from app.filters import IsAdmin, IsAdminCb
 
 import app.admin.keyboards as kb
 
-from config import CHANNEL_ID
-
 admin_router = Router()
 
 admin_router.message.outer_middleware(UserDBCheckMiddleware())
+
+class ManageUser(StatesGroup):
+    username = State()
 
 @admin_router.message(IsAdmin(), Command('menu'))
 async def menu(message: Message):
@@ -25,7 +28,7 @@ async def menu(message: Message):
 
 @admin_router.message(IsAdmin(), F.text == '🛠️Вопросы пользователей')
 async def tech_channel(message: Message):
-    await message.answer('Чтобы посмотреть вопросы пользователей напишите перейдите в чат техподдержки.',
+    await message.answer(text='Чтобы посмотреть вопросы пользователей напишите перейдите в чат техподдержки.',
                          reply_markup=kb.tech_channel_menu)
 
 @admin_router.message(IsAdmin(), F.text == '🎫Посмотреть новые лоты')
@@ -40,9 +43,9 @@ async def view_new_lots(message: Message):
                                                f'Время окончания: {lot["completion_time"]}\n',
                                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                             [InlineKeyboardButton(text='Одобрить лот',
-                                                            callback_data=f'approve_lot_{lot["id"]}')],
+                                                                                  callback_data=f'approve_lot_{lot["id"]}')],
                                                             [InlineKeyboardButton(text='Оклонить лот\n',
-                                                            callback_data=f'reject_lot_{lot["id"]}')],
+                                                                                  callback_data=f'reject_lot_{lot["id"]}')],
                                                     ])
                                        )
     else:
@@ -68,13 +71,12 @@ async def approve_lot(cb: CallbackQuery):
     await cb.answer('Лот №' + str(lot_id) + ' одобрен.')
     await cb.message.delete()
     message = await cb.bot.send_message(chat_id=user.telegram_id,
-                              text='Ваш лот был одобрен и выставлен на продажу.')
+                                        text='Ваш лот был одобрен и выставлен на продажу.')
     await cb.bot.send_message(chat_id=user.telegram_id,
-                        text=f'Ссылка на ваш лот: https://t.me/auction_saharok/{message.message_id}')
+                              text=f'Ссылка на ваш лот: https://t.me/auction_saharok/{message.message_id}')
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r'^reject_lot_\d+$', cb.data))
 async def reject_lot(cb: CallbackQuery):
-    print('Я ЕБАЛ БАБАЙКУ')
     lot_id = int(cb.data.split('_')[-1])
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
@@ -84,3 +86,32 @@ async def reject_lot(cb: CallbackQuery):
     await cb.bot.send_message(chat_id=user.telegram_id,
                               text='Ваш лот был отклонен. За подробностями обращайтесь в тех. поддержку.',
                               reply_markup=kb.tech_bot_menu)
+
+@admin_router.message(IsAdmin(), F.text == '🪪Управление пользователями')
+async def manage_users(message: Message, state: FSMContext):
+    await state.set_state(ManageUser.username)
+    await message.answer('Введите username пользователя(без @).')
+
+@admin_router.message(IsAdmin(), ManageUser.username)
+async def manage_users_state(message: Message, state: FSMContext):
+    await state.update_data(username=message.text)
+    data = await state.get_data()
+    user = await rq.get_user_by_username(data['username'])
+    if user:
+        await message.answer(text=f'👤 Имя пользователя:  {user.username} \n'
+                                  f'📍 Количество лотов:  {user.lots} \n'
+                                  f'💰 Баланс пользователя:  {user.balance}⭐ \n',
+                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                            [InlineKeyboardButton(text='Забанить пользователя',
+                                                                  callback_data=f'ban_user_{user.telegram_id}')],
+                                            [InlineKeyboardButton(text='Разбанить пользователя',
+                                                                  callback_data=f'unban_user_{user.telegram_id}')],
+                                            [InlineKeyboardButton(text='Посмотреть лоты пользователя',
+                                                                  callback_data=f'user_lots_{user.telegram_id}')],
+                                            [InlineKeyboardButton(text='Написать пользователю',
+                                                                  url=f"tg://user?id={user.telegram_id}")],
+                             ])
+                             )
+    else:
+        await message.answer('Пользователь не был найден')
+

@@ -77,3 +77,8 @@ async def set_new_user(tg_id : BigInteger):
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tg_id))
         user.is_new = False
         await session.commit()
+
+async def get_user_by_username(username: str):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.username==username))
+        return user
