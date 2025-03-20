@@ -12,9 +12,9 @@ class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 class LotStatus(enum.Enum):
-    bidding = "bidding"
-    sold_out = "sold_out"
-    time_over = "time_over"
+    TRADING = "TRADING"       # Идут торги
+    SOLD = "SOLD"             # Продан
+    EXPIRED = "EXPIRED"
 
 class LotModStatus(enum.Enum):
     APPROVED = "approved"
@@ -28,6 +28,7 @@ class UserBase(Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     username: Mapped[str]
     balance: Mapped[int] = mapped_column(default=0)
     lots: Mapped[int] = mapped_column(default=0)

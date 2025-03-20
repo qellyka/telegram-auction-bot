@@ -8,7 +8,7 @@ from aiogram.types import Message, CallbackQuery, PreCheckoutQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from app.middlewares import UserDBCheckMiddleware
+from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware
 
 import app.db.requests as rq
 
@@ -21,6 +21,7 @@ from config import PAYMENTS_TOKEN
 user_router = Router()
 
 user_router.message.outer_middleware(UserDBCheckMiddleware())
+user_router.message.outer_middleware(UserBanCheckMiddleware())
 
 class DepositBalance(StatesGroup):
     number_stars = State()
@@ -41,12 +42,12 @@ async def cmd_start(message: Message):
                          reply_markup=kb.main_menu)
         await rq.set_new_user(message.from_user.id)
     else:
-        await message.answer(text='Выберете, что хотите сделать в меню',
+        await message.answer(text='Выберите, что вы  хотите сделать в меню. 🛠',
                              reply_markup=kb.main_menu)
 
 @user_router.message(IsUser(), Command('menu'))
 async def menu(message: Message):
-    await message.answer('Выберете, что хотите сделать в меню', reply_markup=kb.main_menu)
+    await message.answer('Выберите, что вы  хотите сделать в меню. 🛠', reply_markup=kb.main_menu)
 
 @user_router.message(IsUser(), F.text == "🪪Профиль")
 async def profile(message: Message):
@@ -88,12 +89,13 @@ async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(hours=int(message.text))
     data = await state.get_data()
     await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
     await message.answer_photo(photo=data['photo_id'],
                                caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
-                                       f'Время окончания: {data["hours"]}\n'
+                                       f'Время окончания: {lot.completion_time}\n'
                                        f'Продавец: {message.from_user.username}\n'
                                )
-    await message.answer('Ваш лот был отправлен на модерацию, после проверки он будет опубликован и вам прийдёт уведомление.')
+    await message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
     await state.clear()
 
 @user_router.callback_query(IsUser(), F.data == 'deposit_balance')
@@ -104,7 +106,7 @@ async def deposit_balance(cb: CallbackQuery, state: FSMContext):
 
 @user_router.message(IsUser(), DepositBalance.number_stars)
 async def deposit_balance_s(message: Message, state: FSMContext):
-    if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 9000:
+    if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
         await state.update_data(stars=int(message.text))
         data = await state.get_data()
         await message.answer(f'Сейчас мы пришлём счет, на пополнение баланса на {data["stars"]}⭐')
@@ -120,7 +122,9 @@ async def deposit_balance_s(message: Message, state: FSMContext):
             photo_height=650,
             photo_size=800,
             payload=f'deposit_balance_{data["stars"]}',
-            prices=[types.LabeledPrice(label=f'Покупка {data["stars"]}⭐', amount=int(data['stars']*1.65*100))]
+            prices=[types.LabeledPrice(label=f'Покупка {data["stars"]}⭐', amount=int(data['stars']*1.65*100))],
+            need_email=True,
+            send_email_to_provider=True
         )
     else:
         await message.answer("📌 Минимальное числовое значение 50, а максимальное 15 000 📌")

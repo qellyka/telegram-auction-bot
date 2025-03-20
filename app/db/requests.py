@@ -19,7 +19,7 @@ async def set_lot(tg_id: BigInteger, starter_price: int, hours_exp: int, photo_i
             completion_time = datetime.datetime.now() + datetime.timedelta(hours=hours_exp),
             seller = user.username,
             is_post = LotModStatus.PENDING,
-            status = LotStatus.bidding
+            status = LotStatus.TRADING
         ))
         user.lots += 1
         await session.commit()
@@ -72,9 +72,9 @@ async def reject_lot(lot_id: BigInteger, tg_id: BigInteger):
         user.lots =  user.lots - 1
         await session.commit()
 
-async def set_new_user(tg_id : BigInteger):
+async def set_new_user(tid : BigInteger):
     async with async_session() as session:
-        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tg_id))
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tid))
         user.is_new = False
         await session.commit()
 
@@ -82,3 +82,20 @@ async def get_user_by_username(username: str):
     async with async_session() as session:
         user = await session.scalar(select(UserBase).where(UserBase.username==username))
         return user
+
+async def ban_user(tid: BigInteger):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tid))
+        user.is_banned = True
+        await session.commit()
+
+async def unban_user(tid: BigInteger):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tid))
+        user.is_banned = False
+        await session.commit()
+
+async def get_lot_data_by_photo_id(pid: str):
+    async with async_session() as session:
+        lot = await session.scalar(select(LotBase).where(LotBase.photo_id==pid))
+        return lot
