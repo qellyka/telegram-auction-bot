@@ -37,8 +37,11 @@ async def tech_channel(message: Message):
 async def view_black_list(message: Message):
     users = await rq.get_blocked_users()
     if users:
+        await message.answer(text='Список забаненых пользователей: ')
         for user in users:
-            await message.answer()
+            await message.answer(f'{user['username']}')
+    else:
+        await message.answer(text='Список пуст.')
 
 
 @admin_router.message(IsAdmin(), F.text == '🎫Посмотреть новые лоты')

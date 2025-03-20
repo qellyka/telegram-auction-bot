@@ -59,11 +59,6 @@ async def profile(message: Message):
                          f'💰 Ваш баланс:  {user.balance}⭐ \n',
                          reply_markup=kb.profile_menu)
 
-@user_router.message(IsUser(), F.text == "🎫Создать лот")
-async def create_lot(message: Message, state: FSMContext):
-    await message.answer('📷 Пришлите фото подарка, который вы хотите выставить на продажу(владельца можно замазать). 🎁')
-    await state.set_state(CreateLot.photo)
-
 @user_router.message(IsUser(), F.text == "🛠️Тех. поддержка")
 async def create_lot(message: Message):
     await message.answer('❓Если у вас возникли вопросы, то перейдите в нашего бота, чтобы обратиться в службу поддержки ✅',
@@ -74,6 +69,11 @@ async def create_lot(message: Message):
     await message.answer('⚙ Для вывода звёзд, напишите в бот для вывода.',
                          reply_markup=kb.withdraw_bot_menu)
 
+@user_router.message(IsUser(), F.text == "🎫Создать лот")
+async def create_lot(message: Message, state: FSMContext):
+    await message.answer('📷 Пришлите фото подарка, который вы хотите выставить на продажу(владельца можно замазать). 🎁')
+    await state.set_state(CreateLot.photo)
+
 @user_router.message(IsUser(), F.photo, CreateLot.photo)
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(photo_id=message.photo[-1].file_id)
@@ -82,16 +82,23 @@ async def set_lots_photo(message: Message, state: FSMContext):
 
 @user_router.message(IsUser(), CreateLot.starter_price)
 async def set_lots_photo(message: Message, state: FSMContext):
-    await state.update_data(starter_price=int(message.text))
-    await state.set_state(CreateLot.blitz_price)
-    await message.answer('🌟 Введите  блитц цену в звёздах(цена за которую можно моментально выкупить лот), ⭐️=1,65₽.')
+    if message.text and message.text.isdigit() and int(message.text) > 0:
+        await state.update_data(starter_price=int(message.text))
+        await state.set_state(CreateLot.blitz_price)
+        await message.answer('🌟 Введите  блитц цену в звёздах(цена за которую можно моментально выкупить лот), ⭐️=1,65₽.')
+    else:
+        await message.answer('🌟 Введите числовое значение, большее нуля.')
 
 @user_router.message(IsUser(), CreateLot.blitz_price)
 async def set_lots_photo(message: Message, state: FSMContext):
-    await state.update_data(blitz_price=int(message.text))
-    await state.set_state(CreateLot.completion_time)
-    await message.answer('🕒 Выберете кол-во часов через которое лот будет закрыт, если его не выкупят. 🕒',
+    data = await state.get_data()
+    if message.text and message.text.isdigit() and int(message.text) > data['starter_price']:
+        await state.update_data(blitz_price=int(message.text))
+        await state.set_state(CreateLot.completion_time)
+        await message.answer('🕒 Выберете кол-во часов через которое лот будет закрыт, если его не выкупят. 🕒',
                          reply_markup=kb.lot_times_menu)
+    else:
+        await message.answer('🌟 Введите числовое значение, большее стартовой цены.')
 
 # @user_router.message(IsUser(), CreateLot.completion_time)
 # async def set_lots_photo(message: Message, state: FSMContext):

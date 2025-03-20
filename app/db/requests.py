@@ -53,9 +53,6 @@ async def get_new_lots():
             {key: getattr(lot, key) for key in lot.__table__.columns.keys()}
             for lot in lots
         ]
-        print('\n\n\n\n')
-        print(lots_list)
-        print('\n\n\n\n')
         return lots_list
 
 async def approve_lot(lot_id: BigInteger):
@@ -98,3 +95,12 @@ async def get_lot_data_by_photo_id(pid: str):
     async with async_session() as session:
         lot = await session.scalar(select(LotBase).where(LotBase.photo_id==pid))
         return lot
+
+async def get_blocked_users():
+    async with async_session() as session:
+        users = await session.scalars(select(UserBase).where(UserBase.is_banned == True))
+        users_list = [
+            {key: getattr(user, key) for key in user.__table__.columns.keys()}
+            for user in users
+        ]
+        return users_list

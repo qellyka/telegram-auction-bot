@@ -2,7 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 admin_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='🎫Посмотреть новые лоты')],
-    [KeyboardButton(text='🪪Управление пользователями'),KeyboardButton(text="📜Управление лотами"), KeyboardButton(text='🛠️Вопросы пользователей',)],
+    [KeyboardButton(text='🪪Управление пользователями'),KeyboardButton(text="📜Управление лотами")],
+    [KeyboardButton(text='🛠️Вопросы пользователей',), KeyboardButton(text='🃏Черный список',)]
 ],
     resize_keyboard=True,
     input_field_placeholder='Выберите пункт меню')
