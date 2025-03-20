@@ -33,6 +33,14 @@ async def tech_channel(message: Message):
     await message.answer(text='⁉️Перейдите в чат тех поддержки, для того, чтобы посмотреть вопросы других пользователей⁉️',
                          reply_markup=kb.tech_channel_menu)
 
+@admin_router.message(IsAdmin(), F.text == '🃏Черный список')
+async def view_black_list(message: Message):
+    users = await rq.get_blocked_users()
+    if users:
+        for user in users:
+            await message.answer()
+
+
 @admin_router.message(IsAdmin(), F.text == '🎫Посмотреть новые лоты')
 async def view_new_lots(message: Message):
     lots = await rq.get_new_lots()
@@ -42,7 +50,7 @@ async def view_new_lots(message: Message):
                                        caption=f'Стартовая цена: {lot["starter_price"]}⭐\n'
                                                f'Цена моментальной покупки: {lot["moment_buy_price"]}⭐\n'
                                                f'Продавец: {lot["seller"]}\n'f''
-                                               f'Длительность лота: {lot['expired_time']}\n',
+                                               f'Длительность лота(в часах): {lot['expired_time']}\n',
                                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                             [InlineKeyboardButton(text='Одобрить лот',
                                                                                   callback_data=f'approve_lot_{lot["id"]}')],
