@@ -42,7 +42,7 @@ async def view_new_lots(message: Message):
                                        caption=f'Стартовая цена: {lot["starter_price"]}⭐\n'
                                                f'Цена моментальной покупки: {lot["moment_buy_price"]}⭐\n'
                                                f'Продавец: {lot["seller"]}\n'f''
-                                               f'Время окончания: {lot["completion_time"]}\n',
+                                               f'Длительность лота: {lot['expired_time']}\n',
                                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                             [InlineKeyboardButton(text='Одобрить лот',
                                                                                   callback_data=f'approve_lot_{lot["id"]}')],
@@ -66,7 +66,7 @@ async def approve_lot(cb: CallbackQuery):
                                     f'Цена перебивки: {lot.real_price + lot.real_price / 100 * 5}⭐\n'
                                     f'Цена моментальной покупки: {lot.moment_buy_price}⭐\n'
                                     f'Продавец: {lot.seller}\n'f''
-                                    f'Время окончания: {lot.completion_time.strftime("%Y-%m-%d %H:%M:%S")}\n',
+                                    f'Время окончания: {lot.expired_at.strftime("%Y-%m-%d %H:%M:%S")}\n',
                               )
     await cb.answer('Лот №' + str(lot_id) + ' одобрен.')
     await cb.message.delete()

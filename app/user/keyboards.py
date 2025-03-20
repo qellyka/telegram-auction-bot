@@ -20,3 +20,24 @@ withdraw_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вывести звезды ⚙',
                           url='https://t.me/auction_saharok_bot?start=auction_saharok_bot')]
 ])
+
+lot_times_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='1',
+                          callback_data='one_hour'),
+     InlineKeyboardButton(text='2',
+                          callback_data='two_hour'),
+    InlineKeyboardButton(text='4',
+                          callback_data='four_hour'),
+    InlineKeyboardButton(text='8',
+                          callback_data='eight_hour')
+     ],
+    [InlineKeyboardButton(text='10',
+                          callback_data='ten_hour'),
+     InlineKeyboardButton(text='12',
+                          callback_data='twelve_hour'),
+    InlineKeyboardButton(text='24',
+                          callback_data='twenty_four_hour'),
+    InlineKeyboardButton(text='48',
+                          callback_data='forty_eight_hour')
+     ]
+])

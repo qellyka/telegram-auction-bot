@@ -8,7 +8,7 @@ from aiogram.types import Message, CallbackQuery, PreCheckoutQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware
+from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware, UserBanCheckMiddlewareCB
 
 import app.db.requests as rq
 
@@ -22,6 +22,7 @@ user_router = Router()
 
 user_router.message.outer_middleware(UserDBCheckMiddleware())
 user_router.message.outer_middleware(UserBanCheckMiddleware())
+user_router.message.outer_middleware(UserBanCheckMiddlewareCB())
 
 class DepositBalance(StatesGroup):
     number_stars = State()
@@ -29,6 +30,7 @@ class DepositBalance(StatesGroup):
 class CreateLot(StatesGroup):
     photo = State()
     starter_price = State()
+    blitz_price = State()
     completion_time = State()
 
 @user_router.message(IsUser(), CommandStart())
@@ -81,22 +83,170 @@ async def set_lots_photo(message: Message, state: FSMContext):
 @user_router.message(IsUser(), CreateLot.starter_price)
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(starter_price=int(message.text))
-    await state.set_state(CreateLot.completion_time)
-    await message.answer('🕒 Введите кол-во часов (от 1 до 24) через которое лот будет закрыт, если его не выкупят. 🕒')
+    await state.set_state(CreateLot.blitz_price)
+    await message.answer('🌟 Введите  блитц цену в звёздах(цена за которую можно моментально выкупить лот), ⭐️=1,65₽.')
 
-@user_router.message(IsUser(), CreateLot.completion_time)
+@user_router.message(IsUser(), CreateLot.blitz_price)
 async def set_lots_photo(message: Message, state: FSMContext):
-    await state.update_data(hours=int(message.text))
+    await state.update_data(blitz_price=int(message.text))
+    await state.set_state(CreateLot.completion_time)
+    await message.answer('🕒 Выберете кол-во часов через которое лот будет закрыт, если его не выкупят. 🕒',
+                         reply_markup=kb.lot_times_menu)
+
+# @user_router.message(IsUser(), CreateLot.completion_time)
+# async def set_lots_photo(message: Message, state: FSMContext):
+#     await state.update_data(hours=int(message.text))
+#     data = await state.get_data()
+#     await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
+#     lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+#     await message.answer_photo(photo=data['photo_id'],
+#                                caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+#                                        f'Время окончания: {lot.expired_at}\n'
+#                                        f'Продавец: {message.from_user.username}\n'
+#                                )
+#     await message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+#     await state.clear()
+
+@user_router.callback_query(IsUser(), F.data == 'one_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours = 1)
     data = await state.get_data()
-    await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], pid=data['photo_id'], blitz_price=data['blitz_price'])
     lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
-    await message.answer_photo(photo=data['photo_id'],
-                               caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
-                                       f'Время окончания: {lot.completion_time}\n'
-                                       f'Продавец: {message.from_user.username}\n'
-                               )
-    await message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                                   caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                           f'Блитц цена: {data['blitz_price']}⭐\n'
+                                           f'Длительность лота: {data['hours']}\n'
+                                           f'Продавец: {cb.from_user.username}\n'
+                                   )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
     await state.clear()
+
+@user_router.callback_query(IsUser(), F.data == 'two_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours = 2)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                                   caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                           f'Блитц цена: {data['blitz_price']}⭐\n'
+                                           f'Длительность лота: {lot.expired_time}\n'
+                                           f'Продавец: {cb.from_user.username}\n'
+                                   )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'four_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=4)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'eight_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=8)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'ten_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=10)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'twelve_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=12)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'twenty_four_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=24)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
+
+@user_router.callback_query(IsUser(), F.data == 'forty_eight_hour', CreateLot.completion_time)
+async def set_lot(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(hours=48)
+    data = await state.get_data()
+    await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
+                     pid=data['photo_id'], blitz_price=data['blitz_price'])
+    lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=data['photo_id'],
+                          caption=f'Стартовая цена: {data["starter_price"]}⭐\n'
+                                  f'Блитц цена: {data['blitz_price']}⭐\n'
+                                  f'Длительность лота: {lot.expired_time}\n'
+                                  f'Продавец: {cb.from_user.username}\n'
+                          )
+    await cb.message.answer('📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝')
+    await state.clear()
+
 
 @user_router.callback_query(IsUser(), F.data == 'deposit_balance')
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):

@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import asdict
+from zoneinfo import ZoneInfo
 
 from app.db.engine import async_session
 from app.db.models import UserBase, LotBase, LotStatus, LotModStatus
@@ -7,16 +7,17 @@ from app.db.models import UserBase, LotBase, LotStatus, LotModStatus
 from sqlalchemy import select, BigInteger
 
 
-async def set_lot(tg_id: BigInteger, starter_price: int, hours_exp: int, photo_id: str):
+async def set_lot(tid: BigInteger, starter_price: int, hours_exp: int, pid: str, blitz_price: int):
     async with async_session() as session:
-        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tg_id))
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id==tid))
         session.add(LotBase(
             user_id =user.id,
-            photo_id=photo_id,
+            photo_id=pid,
             starter_price = starter_price,
             real_price = starter_price,
-            moment_buy_price = starter_price + (starter_price / 100 * 20),
-            completion_time = datetime.datetime.now() + datetime.timedelta(hours=hours_exp),
+            moment_buy_price = blitz_price,
+            expired_at = datetime.datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None) + datetime.timedelta(hours=hours_exp),
+            expired_time = hours_exp,
             seller = user.username,
             is_post = LotModStatus.PENDING,
             status = LotStatus.TRADING
@@ -61,15 +62,13 @@ async def approve_lot(lot_id: BigInteger):
     async with async_session() as session:
         lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
         lot.is_post = LotModStatus.APPROVED
+        lot.expired_at = datetime.datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None) + datetime.timedelta(hours=lot.expired_time)
         await session.commit()
 
 async def reject_lot(lot_id: BigInteger, tg_id: BigInteger):
     async with async_session() as session:
         lot = await session.scalar(select(LotBase).where(LotBase.id==lot_id))
         lot.is_post = LotModStatus.REJECTED
-        user = await get_user_data(tg_id)
-        session.merge(user)
-        user.lots =  user.lots - 1
         await session.commit()
 
 async def set_new_user(tid : BigInteger):
