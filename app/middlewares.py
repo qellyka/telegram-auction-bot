@@ -1,7 +1,8 @@
+import logging
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.dispatcher.event.bases import CancelHandler
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, Update
 from sqlalchemy import select
 
 import app.admin.keyboards as kb
@@ -19,7 +20,10 @@ class UserDBCheckMiddleware(BaseMiddleware):
             user = event.from_user
             async with async_session() as session:
                 db_user = await session.scalar(select(UserBase).where(UserBase.telegram_id == user.id))
-                if not db_user:
+                if not user.username:
+                    await event.answer('Извините, но у вас отсутствует username. Для того чтобы пользоваться ботом, создайте себе username, после чего повторите команду.')
+                    raise CancelHandler()
+                elif not db_user:
                     session.add(UserBase(
                         telegram_id = user.id,
                         username = user.username,
@@ -66,6 +70,3 @@ class UserBanCheckMiddlewareCB(BaseMiddleware):
                 raise CancelHandler()
 
         return await handler(event, data)
-
-
-
