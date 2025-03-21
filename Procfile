@@ -1,1 +1,1 @@
-worker: python bot.py
+worker: poetry run python main.py
