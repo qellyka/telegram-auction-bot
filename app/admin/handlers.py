@@ -39,7 +39,7 @@ async def view_black_list(message: Message):
     if users:
         await message.answer(text="Список забаненых пользователей: ")
         for user in users:
-            await message.answer(f"{user["username"]}")
+            await message.answer(f"{user['username']}")
     else:
         await message.answer(text="Список пуст.")
 
@@ -50,15 +50,15 @@ async def view_new_lots(message: Message):
     if lots:
         for lot in lots:
             await message.answer_photo(photo=lot["photo_id"],
-                                       caption=f"Стартовая цена: {lot["starter_price"]}⭐\n"
-                                               f"Цена моментальной покупки: {lot["moment_buy_price"]}⭐\n"
-                                               f"Продавец: {lot["seller"]}\n"f""
-                                               f"Длительность лота(в часах): {lot["expired_time"]}\n",
+                                       caption=f"Стартовая цена: {lot['starter_price']}⭐\n"
+                                               f"Цена моментальной покупки: {lot['moment_buy_price']}⭐\n"
+                                               f"Продавец: {lot['seller']}\n"f""
+                                               f"Длительность лота(в часах): {lot['expired_time']}\n",
                                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                             [InlineKeyboardButton(text="Одобрить лот",
-                                                                                  callback_data=f"approve_lot_{lot["id"]}")],
+                                                                                  callback_data=f"approve_lot_{lot['id']}")],
                                                             [InlineKeyboardButton(text="Оклонить лот\n",
-                                                                                  callback_data=f"reject_lot_{lot["id"]}")],
+                                                                                  callback_data=f"reject_lot_{lot['id']}")],
                                                     ])
                                        )
     else:
@@ -77,7 +77,7 @@ async def approve_lot(cb: CallbackQuery):
                                     f"Цена перебивки: {lot.real_price + lot.real_price / 100 * 5}⭐\n"
                                     f"Цена моментальной покупки: {lot.moment_buy_price}⭐\n"
                                     f"Продавец: {lot.seller}\n"f""
-                                    f"Время окончания: {lot.expired_at.strftime("%Y-%m-%d %H:%M:%S")}\n",
+                                    f"Время окончания: {lot.expired_at.strftime("%Y-%m-%d %H:%M:%S")}(MSK)\n",
                               )
     await cb.answer("Лот №" + str(lot_id) + " одобрен.")
     await cb.message.delete()
