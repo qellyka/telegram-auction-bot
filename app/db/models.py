@@ -17,12 +17,12 @@ class LotStatus(enum.Enum):
     EXPIRED = "EXPIRED"
 
 class LotModStatus(enum.Enum):
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    PENDING = "pending"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    PENDING = "PENDING"
 
 class UserBase(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True)
@@ -32,15 +32,16 @@ class UserBase(Base):
     username: Mapped[str]
     balance: Mapped[int] = mapped_column(default=0)
     lots: Mapped[int] = mapped_column(default=0)
+    # warns: Mapped[int] = mapped_column(default=0)
 
     def __repr__(self):
         return f"<User(telegram_id={self.telegram_id}, username={self.username})>"
 
 class LotBase(Base):
-    __tablename__ = 'lots'
+    __tablename__ = "lots"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger ,ForeignKey('users.id', ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(BigInteger ,ForeignKey("users.id", ondelete="CASCADE"))
     photo_id: Mapped[str]
     starter_price: Mapped[int]
     real_price: Mapped[int]

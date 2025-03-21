@@ -39,7 +39,7 @@ class UserBanCheckMiddleware(BaseMiddleware):
             async with async_session() as session:
                 db_user = await session.scalar(select(UserBase).where(UserBase.telegram_id == user.id))
                 if db_user.is_banned:
-                    await event.answer(text='Похоже вы забанены, если вы считаете, что бан был выдан по ошибке, советуем обратиться в тех. поддержку.',
+                    await event.answer(text="Похоже вы забанены, если вы считаете, что бан был выдан по ошибке, советуем обратиться в тех. поддержку.",
                                        reply_markup=kb.tech_bot_menu)
                     raise CancelHandler()
 
