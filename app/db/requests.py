@@ -104,3 +104,18 @@ async def get_blocked_users():
             for user in users
         ]
         return users_list
+
+async def get_first_new_lot():
+    async with async_session() as session:
+        return await session.scalar(
+            select(LotBase).where(LotBase.status == "pending").order_by(LotBase.id.asc()).limit(1)
+        )
+
+async def get_next_lot(current_lot_id):
+    async with async_session() as session:
+        return await session.scalar(
+            select(LotBase)
+            .where(LotBase.status == "pending", LotBase.id > current_lot_id)
+            .order_by(LotBase.id.asc())
+            .limit(1)
+        )
