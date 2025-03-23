@@ -24,7 +24,7 @@ services:
       BOT_TOKEN : #YOUR BOT TOKEN
       DB_URL : #YOUR DATABASE URL
       PAYMENTS_TOKEN : #YOUR PAYMENTS TOKEN
-      CHANNEL_ID : #YOUR CHANNEL ID
+      CHANNEL_ID : #YOUR  CHANNEL ID
     depends_on:
       - db
     networks:
