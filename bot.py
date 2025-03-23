@@ -19,7 +19,10 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG,
+                        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",)
+    logger = logging.getLogger("aiogram")
+    logger.setLevel(logging.DEBUG)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
