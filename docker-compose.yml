@@ -21,10 +21,10 @@ services:
     container_name: telegram_auction_bot
     restart: always
     environment:
-      BOT_TOKEN : 7194084241:AAEeDGexPRweq7mf0pqUDcCIWkuHmnSmgRw
-      DB_URL : postgresql+asyncpg://www:www_02064037fec7@localhost/postgres
-      PAYMENTS_TOKEN : 1744374395:TEST:96d41625492547bab733
-      CHANNEL_ID : -1001836551522
+      BOT_TOKEN : #YOUR BOT TOKEN
+      DB_URL : #YOUR DATABASE URL
+      PAYMENTS_TOKEN : #YOUR PAYMENTS TOKEN
+      CHANNEL_ID : #YOUR CHANNEL ID
     depends_on:
       - db
     networks:
