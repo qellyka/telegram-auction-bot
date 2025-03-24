@@ -16,7 +16,7 @@ from app.filters import IsAdmin, IsAdminCb
 
 import app.admin.keyboards as kb
 
-from config import CHANNEL_ID
+from config import CHANNEL_ID, BOT_ID, status_mapping
 
 admin_router = Router()
 
@@ -141,20 +141,25 @@ async def approve_lot(cb: CallbackQuery):
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
     message = await cb.bot.send_photo(chat_id=f"@{CHANNEL_ID}",
-                            photo=lot.photo_id,
-                            caption=f"Лот: <b>#{lot.id}</b>\n"
-                                    f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
-                                    f"Последняя ставка: <b>{lot.real_price}</b>🌟\n"
-                                    f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
-                                    f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
-                                    f"Продвец: <b>{lot.seller}</b>\n"
-                                    f"Время окончания: <b>{lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
-                            parse_mode="HTML"
-                              )
+                                      photo=lot.photo_id,
+                                      caption=f"Лот: <b>#{lot.id}</b>\n"
+                                              f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
+                                              f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
+                                              f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
+                                              f"Продвец: <b>{lot.seller}</b>\n"
+                                              f"Время окончания: <b>{lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n"
+                                              f"Статус: {status_mapping.get(lot.status.value)}",
+                                      parse_mode="HTML",
+                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                          [InlineKeyboardButton(text="Принять участие",
+                                                                url=f"https://t.me/{BOT_ID}?start={lot.uuid}")]
+                                      ])
+                            )
     await cb.answer("Лот №" + str(lot_id) + " одобрен.")
     await cb.bot.send_message(chat_id=user.telegram_id,
                                         text=f"✅ Ваш лот был одобрен и выставлен на продажу.\n"
                                              f"🔗 Ссылка на ваш лот : https://t.me/{CHANNEL_ID}/{message.message_id}")
+    await rq.set_message_id(lot_id, message.message_id)
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
         await cb.message.edit_media(media=InputMediaPhoto(
@@ -287,3 +292,4 @@ async def reject_lot(cb: CallbackQuery):
 async def end_moderation(cb: CallbackQuery):
     await cb.message.delete()
     await cb.message.answer("Вы закончили модерировать лоты.")
+
