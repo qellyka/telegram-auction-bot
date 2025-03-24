@@ -41,14 +41,17 @@ class LotBase(Base):
     __tablename__ = "lots"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[str]
     user_id: Mapped[int] = mapped_column(BigInteger ,ForeignKey("users.id", ondelete="CASCADE"))
     photo_id: Mapped[str]
+    message_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     starter_price: Mapped[int]
     real_price: Mapped[int]
     moment_buy_price: Mapped[Optional[int]]
     expired_at: Mapped[datetime.datetime]
     expired_time: Mapped[int]
     buyer: Mapped[Optional[str]]
+    applicant: Mapped[Optional[int]]
     seller: Mapped[str]
     is_post: Mapped[LotModStatus]
     status: Mapped[LotStatus]
