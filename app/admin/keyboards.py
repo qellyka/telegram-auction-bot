@@ -15,3 +15,8 @@ tech_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
                           url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
 ])
+
+interrupt_work = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Прервать",
+                          callback_data="interrupt_work")]
+])

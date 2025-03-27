@@ -41,3 +41,8 @@ lot_times_menu = InlineKeyboardMarkup(inline_keyboard=[
                           callback_data="forty_eight_hour")
      ]
 ])
+
+interrupt_work = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Прервать",
+                          callback_data="interrupt_work")]
+])
