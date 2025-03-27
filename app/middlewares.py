@@ -27,7 +27,12 @@ class UserDBCheckMiddleware(BaseMiddleware):
                     session.add(UserBase(
                         telegram_id = user.id,
                         username = user.username,
+                        name = user.first_name
                     ))
+                    await session.commit()
+                elif db_user.username != user.username or db_user.name != user.first_name:
+                    db_user.username = user.username
+                    db_user.name = user.first_name
                     await session.commit()
 
             return await handler(event, data)
