@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import F, Router, types
 
 import re
@@ -47,7 +49,8 @@ async def view_black_list(message: Message):
 @admin_router.message(IsAdmin(), F.text == "🪪Управление пользователями")
 async def manage_users(message: Message, state: FSMContext):
     await state.set_state(ManageUser.username)
-    await message.answer("🧑‍💻 Введите username пользователя (без @).")
+    await message.answer("🧑‍💻 Введите username пользователя (без @).",
+                         reply_markup=kb.interrupt_work)
 
 @admin_router.message(IsAdmin(), ManageUser.username)
 async def manage_users_state(message: Message, state: FSMContext):
@@ -111,14 +114,15 @@ async def ban_user(cb: CallbackQuery):
 async def new_lots_menu(message: Message):
     lot = await rq.get_first_new_lot()
     if lot:
+        seller = await rq.get_user_data(lot.seller)
         await message.answer_photo(photo=lot.photo_id,
                                    caption=f"Лот: <b>#{lot.id}</b>\n"
                                            f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
                                            f"Последняя ставка: <b>{lot.real_price}</b>🌟\n"
                                            f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
                                            f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
-                                           f"Продвец: <b>{lot.seller}</b>\n"
-                                           f"Время окончания: <b>{lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
+                                           f"Продвец: <b>{seller.name}</b>\n"
+                                           f"Время окончания: <b>{lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n",
                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                     [InlineKeyboardButton(text="✅ Одобрить",
                                                                           callback_data=f"approve_lot_{lot.id}")],
@@ -140,15 +144,16 @@ async def approve_lot(cb: CallbackQuery):
     await rq.approve_lot(lot_id=lot_id)
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
+    seller = await rq.get_user_data(lot.seller)
     message = await cb.bot.send_photo(chat_id=f"@{CHANNEL_ID}",
                                       photo=lot.photo_id,
                                       caption=f"Лот: <b>#{lot.id}</b>\n"
                                               f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
                                               f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
                                               f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
-                                              f"Продвец: <b>{lot.seller}</b>\n"
-                                              f"Время окончания: <b>{lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n"
-                                              f"Статус: {status_mapping.get(lot.status.value)}",
+                                              f"Продвец: <b>{seller.name}</b>\n"
+                                              f"Время окончания: <b>{lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n"
+                                              f"Статус: <b>{status_mapping.get(lot.status.value)}</b>",
                                       parse_mode="HTML",
                                       reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                           [InlineKeyboardButton(text="Принять участие",
@@ -162,6 +167,7 @@ async def approve_lot(cb: CallbackQuery):
     await rq.set_message_id(lot_id, message.message_id)
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
+        nx_user = await rq.get_user_data(next_lot.seller)
         await cb.message.edit_media(media=InputMediaPhoto(
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
@@ -169,7 +175,7 @@ async def approve_lot(cb: CallbackQuery):
                     f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
-                    f"Продвец: <b>{next_lot.seller}</b>\n"
+                    f"Продвец: <b>{nx_user.name}</b>\n"
                     f"Время окончания: <b>{next_lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
             parse_mode="HTML")
         )
@@ -186,20 +192,24 @@ async def approve_lot(cb: CallbackQuery):
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
-        await cb.message.edit_text("🎉 Все лоты рассмотрены! Новых лотов нет.")
+        await cb.message.delete()
+        msg = await cb.message.answer("🎉 Все лоты рассмотрены! Новых лотов нет.")
+        await asyncio.sleep(3)
+        await msg.delete()
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_lot_\d+$", cb.data))
 async def reject_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
-    await rq.reject_lot(lot_id=lot_id, tg_id=cb.from_user.id)
+    await rq.reject_lot(lot_id=lot_id)
     await cb.answer("Лот №" + str(lot_id) + " отклонен.")
     await cb.bot.send_message(chat_id=user.telegram_id,
                               text="Ваш лот был отклонен. За подробностями обращайтесь в тех. поддержку.",
                               reply_markup=kb.tech_bot_menu)
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
+        nx_user = await rq.get_user_data(next_lot.seller)
         await cb.message.edit_media(media=InputMediaPhoto(
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
@@ -207,7 +217,7 @@ async def reject_lot(cb: CallbackQuery):
                     f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
-                    f"Продвец: <b>{next_lot.seller}</b>\n"
+                    f"Продвец: <b>{nx_user.name}</b>\n"
                     f"Время окончания: <b>{next_lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
             parse_mode="HTML")
         )
@@ -231,6 +241,7 @@ async def reject_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
+        nx_user = await rq.get_user_data(next_lot.seller)
         await cb.message.edit_media(media=InputMediaPhoto(
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
@@ -238,8 +249,8 @@ async def reject_lot(cb: CallbackQuery):
                     f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
-                    f"Продвец: <b>{next_lot.seller}</b>\n"
-                    f"Время окончания: <b>{next_lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
+                    f"Продвец: <b>{nx_user.name}</b>\n"
+                    f"Время окончания: <b>{next_lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n",
             parse_mode="HTML")
         )
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -270,7 +281,7 @@ async def reject_lot(cb: CallbackQuery):
                     f"Следующая минимальная ставка: <b>{prev_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{prev_lot.moment_buy_price}</b>🌟\n"
                     f"Продвец: <b>{prev_lot.seller}</b>\n"
-                    f"Время окончания: <b>{prev_lot.expired_at.strftime('%Y-%m-%d %H:%M:%S')}</b> (MSK)\n",
+                    f"Время окончания: <b>{prev_lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n",
             parse_mode="HTML")
         )
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -291,5 +302,14 @@ async def reject_lot(cb: CallbackQuery):
 @admin_router.callback_query(IsAdminCb(), F.data == "end_moderation")
 async def end_moderation(cb: CallbackQuery):
     await cb.message.delete()
-    await cb.message.answer("Вы закончили модерировать лоты.")
+    msg = await cb.message.answer("Вы закончили модерировать лоты.")
+    await asyncio.sleep(5)
+    await msg.delete()
 
+@admin_router.callback_query(IsAdminCb(), F.data == "interrupt_work")
+async def interrupt_work(cb: CallbackQuery, state: FSMContext):
+    await cb.message.delete()
+    await state.clear()
+    new_message = await cb.message.answer("Вы прервали работу!")
+    await asyncio.sleep(5)
+    await new_message.delete()
