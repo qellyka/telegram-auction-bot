@@ -5,15 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
-from sqlalchemy import ForeignKey, BigInteger, Boolean, false, true
+from sqlalchemy import ForeignKey, BigInteger, Boolean
 from typing import Optional
 
 class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 class LotStatus(enum.Enum):
-    TRADING = "TRADING"       # Идут торги
-    SOLD = "SOLD"             # Продан
+    TRADING = "TRADING"
+    SOLD = "SOLD"
     EXPIRED = "EXPIRED"
 
 class LotModStatus(enum.Enum):
@@ -26,13 +26,14 @@ class UserBase(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True)
+    name: Mapped[Optional[str]]
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     username: Mapped[str]
     balance: Mapped[int] = mapped_column(default=0)
     lots: Mapped[int] = mapped_column(default=0)
-    # warns: Mapped[int] = mapped_column(default=0)
+    warns: Mapped[int] = mapped_column(default=0)
 
     def __repr__(self):
         return f"<User(telegram_id={self.telegram_id}, username={self.username})>"
@@ -50,8 +51,8 @@ class LotBase(Base):
     moment_buy_price: Mapped[Optional[int]]
     expired_at: Mapped[datetime.datetime]
     expired_time: Mapped[int]
-    buyer: Mapped[Optional[str]]
-    applicant: Mapped[Optional[int]]
-    seller: Mapped[str]
+    buyer: Mapped[Optional[int]] = mapped_column(BigInteger)
+    applicant: Mapped[Optional[int]] = mapped_column(BigInteger)
+    seller: Mapped[int] = mapped_column(BigInteger)
     is_post: Mapped[LotModStatus]
     status: Mapped[LotStatus]
