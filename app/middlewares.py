@@ -21,7 +21,7 @@ class UserDBCheckMiddleware(BaseMiddleware):
             async with async_session() as session:
                 db_user = await session.scalar(select(UserBase).where(UserBase.telegram_id == user.id))
                 if not user.username:
-                    await event.answer('Извините, но у вас отсутствует username. Для того чтобы пользоваться ботом, создайте себе username, после чего повторите команду.')
+                    await event.answer("Извините, но у вас отсутствует username. Для того чтобы пользоваться ботом, создайте себе username, после чего повторите команду.")
                     raise CancelHandler()
                 elif not db_user:
                     session.add(UserBase(

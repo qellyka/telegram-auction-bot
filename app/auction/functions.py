@@ -73,7 +73,6 @@ async def process_lot(lot: LotBase, bot: Bot):
         )
 
 async def background_tasks(bot: Bot):
-    """Запускает периодическую проверку лотов"""
     while True:
         await check_expired_lots(bot)
         await asyncio.sleep(60)

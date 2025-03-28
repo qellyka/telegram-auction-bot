@@ -131,19 +131,6 @@ async def set_lots_photo(message: Message, state: FSMContext):
     else:
         await message.answer("🌟 Введите числовое значение, большее стартовой цены.")
 
-# @user_router.message(IsUser(), CreateLot.completion_time)
-# async def set_lots_photo(message: Message, state: FSMContext):
-#     await state.update_data(hours=int(message.text))
-#     data = await state.get_data()
-#     await rq.set_lot(tg_id=message.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], photo_id=data['photo_id'])
-#     lot = await rq.get_lot_data_by_photo_id(data['photo_id'])
-#     await message.answer_photo(photo=data['photo_id'],
-#                                caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-#                                        f"Время окончания: {lot.expired_at}\n"
-#                                        f"Продавец: {message.from_user.username}\n"
-#                                )
-#     await message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
-#     await state.clear()
 
 @user_router.callback_query(IsUser(), F.data == "one_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
@@ -378,6 +365,32 @@ async def buy_now(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
+    user = await rq.get_user_data(cb.from_user.id)
+
+    if lot.status == LotStatus.SOLD:
+        await cb.answer()
+        await cb.message.delete()
+        await cb.message.answer("Лот уже выкуплен.")
+        return
+
+    elif lot.status == LotStatus.EXPIRED:
+        await cb.answer()
+        await cb.message.delete()
+        await cb.message.answer("Лот был закрыт по времени, его никто не купил.")
+        return
+
+    elif user.balance < lot.real_price:
+        await cb.answer()
+        await cb.message.answer("💰На вашем балансе недостаточно звезд⭐, пополните баланс, нажав на кнопку ниже ⬇️",
+                                reply_markup=kb.profile_menu)
+        return
+
+    applicant = await rq.get_lot_applicant(lot_id)
+
+    if applicant == cb.from_user.id:
+        await cb.answer()
+        await cb.message.answer("⌛️Вы уже сделали ставку на этот лот, дождитесь пока её перебьют  или купите мгновенно⌛️")
+        return
 
     await rq.buy_now(lot_id, cb.from_user.id)
 

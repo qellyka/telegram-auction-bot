@@ -160,7 +160,7 @@ async def approve_lot(cb: CallbackQuery):
                                                                 url=f"https://t.me/{BOT_ID}?start={lot.uuid}")]
                                       ])
                             )
-    await cb.answer("Лот №" + str(lot_id) + " одобрен.")
+    await cb.answer("Лот #" + str(lot_id) + " одобрен.")
     await cb.bot.send_message(chat_id=user.telegram_id,
                                         text=f"✅ Ваш лот был одобрен и выставлен на продажу.\n"
                                              f"🔗 Ссылка на ваш лот : https://t.me/{CHANNEL_ID}/{message.message_id}")
@@ -172,7 +172,6 @@ async def approve_lot(cb: CallbackQuery):
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
                     f"Стартовая цена: <b>{next_lot.starter_price}</b>🌟\n"
-                    f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
                     f"Продвец: <b>{nx_user.name}</b>\n"
@@ -214,7 +213,6 @@ async def reject_lot(cb: CallbackQuery):
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
                     f"Стартовая цена: <b>{next_lot.starter_price}</b>🌟\n"
-                    f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
                     f"Продвец: <b>{nx_user.name}</b>\n"
@@ -246,7 +244,6 @@ async def reject_lot(cb: CallbackQuery):
             media=next_lot.photo_id,
             caption=f"Лот: <b>#{next_lot.id}</b>\n"
                     f"Стартовая цена: <b>{next_lot.starter_price}</b>🌟\n"
-                    f"Последняя ставка: <b>{next_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{next_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{next_lot.moment_buy_price}</b>🌟\n"
                     f"Продвец: <b>{nx_user.name}</b>\n"
@@ -266,7 +263,7 @@ async def reject_lot(cb: CallbackQuery):
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
-        await cb.message.edit_text("🎉 Все лоты рассмотрены! Новых лотов нет.")
+        await cb.answer("Вы рассмотрели все лоты после данного.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
 async def reject_lot(cb: CallbackQuery):
@@ -277,7 +274,6 @@ async def reject_lot(cb: CallbackQuery):
             media=prev_lot.photo_id,
             caption=f"Лот: <b>#{prev_lot.id}</b>\n"
                     f"Стартовая цена: <b>{prev_lot.starter_price}</b>🌟\n"
-                    f"Последняя ставка: <b>{prev_lot.real_price}</b>🌟\n"
                     f"Следующая минимальная ставка: <b>{prev_lot.real_price + 1}</b>🌟\n"
                     f"Цена моментальной покупки: <b>{prev_lot.moment_buy_price}</b>🌟\n"
                     f"Продвец: <b>{prev_lot.seller}</b>\n"
@@ -297,7 +293,7 @@ async def reject_lot(cb: CallbackQuery):
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
-        await cb.answer('Вы рассмотрели все лоты перед данным.')
+        await cb.answer("Вы рассмотрели все лоты перед данным.")
 
 @admin_router.callback_query(IsAdminCb(), F.data == "end_moderation")
 async def end_moderation(cb: CallbackQuery):

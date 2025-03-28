@@ -59,13 +59,13 @@ async def bid_lot(lot, bid: int, cb: CallbackQuery, lot_id: int, user_id: int):
         chat_id=f"@{CHANNEL_ID}",
         message_id=lot.message_id,
         caption=f"Лот: <b>#{lot.id}</b>\n"
-             f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
-             f"Последняя ставка: <b>{lot.real_price}</b>🌟\n"
-             f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
-             f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
-             f"Продвец: <b>{lot_seller.name}</b>\n"
-             f"Время окончания: <b>{lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n"
-             f"Статус: <b>{status_mapping.get(lot.status.value, "None")}</b>",
+                f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
+                f"Последняя ставка: <b>{lot.real_price}</b>🌟\n"
+                f"Следующая минимальная ставка: <b>{lot.real_price + 1}</b>🌟\n"
+                f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
+                f"Продвец: <b>{lot_seller.name}</b>\n"
+                f"Время окончания: <b>{lot.expired_at.strftime('%d.%m.%Y %H:%M')}</b> (MSK)\n"
+                f"Статус: <b>{status_mapping.get(lot.status.value, "None")}</b>",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(
          inline_keyboard=[
