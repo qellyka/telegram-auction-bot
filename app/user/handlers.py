@@ -19,7 +19,7 @@ from app.filters import IsUser
 
 import app.user.keyboards as kb
 
-from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID
+from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS
 
 from app.user.handler_functions import bid_lot
 
@@ -43,14 +43,14 @@ async def cmd_start(message: Message, command: CommandObject):
     lot_uuid = command.args
     if lot_uuid:
         lot = await rq.get_lot_by_uuid(lot_uuid)
-        user = await rq.get_user_data_id(lot.user_id)
+        seller = await rq.get_user_data_id(lot.user_id)
         await message.answer_photo(photo=lot.photo_id,
-                                   caption=f"Стартовая цена: {lot.starter_price}🌟\n"
-                                           f"Последняя ставка: {lot.real_price}🌟\n"
-                                           f"Следующая минимальная ставка: {lot.real_price + 1}🌟\n"
-                                           f"Блитц цена: {lot.moment_buy_price}🌟\n"
-                                           f"Закончится: {lot.expired_at.strftime('%d.%m.%Y %H:%M')} (MSK)\n"
-                                           f"Продавец: {user.name}\n",
+                                   caption=TEXTS["cmd_start_auction_caption"].format(starter_price=lot.starter_price,
+                                                                                     real_price=lot.real_price,
+                                                                                     min_next_price=lot.real_price + 1,
+                                                                                     moment_buy_price=lot.moment_buy_price,
+                                                                                     expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M'),
+                                                                                     name=seller.name),
                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                        [InlineKeyboardButton(text='Перебить ставку(+1)',
                                                              callback_data=f'bid_1_{lot.id}')],
@@ -66,42 +66,39 @@ async def cmd_start(message: Message, command: CommandObject):
     else:
         user = await rq.get_user_data(message.from_user.id)
         if user.is_new:
-            await message.answer("👋Привет, это бот Аукцион Saharok's/richa\n\n"
-                                      "🕒Мы работаем: \n"
-                                      "8:00 - 23:00мск, в это время вам ответят в течение 5 - 10 минут!\n\n"
-                                      "📌Заказы, пришедшие с 23:00 до 8:00, будут выполнены утром, в порядке очереди.",
+            await message.answer(text=TEXTS["cmd_start_msg"].format(name=user.name),
                              reply_markup=kb.main_menu)
             await rq.set_new_user(message.from_user.id)
         else:
-            await message.answer(text="Выберите, что вы  хотите сделать в меню. 🛠",
+            await message.answer(text=TEXTS["main_menu_msg"],
                                  reply_markup=kb.main_menu)
 
 @user_router.message(IsUser(), Command("menu"))
 async def menu(message: Message):
-    await message.answer("Выберите, что вы  хотите сделать в меню. 🛠", reply_markup=kb.main_menu)
+    await message.answer(text=TEXTS["main_menu_msg"],
+                         reply_markup=kb.main_menu)
 
 @user_router.message(IsUser(), F.text == "🪪Профиль")
 async def profile(message: Message):
     user = await rq.get_user_data(message.from_user.id)
-    await message.answer(f"👤 Имя пользователя:  {message.from_user.username} \n"
-                         f"📍 Количество лотов:  {user.lots} \n"
-                         f"💰 Ваш баланс:  {user.balance}🌟 \n",
+    await message.answer(text=TEXTS["user_profile_msg"].format(username=user.username,
+                                                               lots=user.lots,
+                                                               balance=user.balance),
                          reply_markup=kb.profile_menu)
 
 @user_router.message(IsUser(), F.text == "🛠️Тех. поддержка")
 async def create_lot(message: Message):
-    await message.answer("❓Если у вас возникли вопросы, то перейдите в нашего бота, чтобы обратиться в службу поддержки ✅",
+    await message.answer(text=TEXTS["support_msg"],
                          reply_markup=kb.tech_bot_menu)
 
 @user_router.message(IsUser(), F.text == "Вывести 🌟")
 async def create_lot(message: Message):
-    await message.answer("⚙ Для вывода звёзд, напишите в бот для вывода.",
+    await message.answer(text=TEXTS["withdraw_stars_msg"],
                          reply_markup=kb.withdraw_bot_menu)
 
 @user_router.message(IsUser(), F.text == "🎫Создать лот")
 async def create_lot(message: Message, state: FSMContext):
-    await message.answer("📷 Пришлите фото подарка, который вы хотите выставить на продажу(владельца можно замазать). 🎁\n"
-                         "🔁Если вы нажали на кнопку случайно, нажмите 'прервать' 🔁",
+    await message.answer(text=TEXTS["create_lot_1_msg"],
                          reply_markup=kb.interrupt_work)
     await state.set_state(CreateLot.photo)
 
@@ -109,16 +106,16 @@ async def create_lot(message: Message, state: FSMContext):
 async def set_lots_photo(message: Message, state: FSMContext):
     await state.update_data(photo_id=message.photo[-1].file_id)
     await state.set_state(CreateLot.starter_price)
-    await message.answer("🌟 Введите  стартовую цену в звёздах, 🌟️=1,65₽.")
+    await message.answer(TEXTS["create_lot_2_msg"])
 
 @user_router.message(IsUser(), CreateLot.starter_price)
 async def set_lots_photo(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) > 0:
         await state.update_data(starter_price=int(message.text))
         await state.set_state(CreateLot.blitz_price)
-        await message.answer("🌟 Введите  блитц цену в звёздах(цена за которую можно моментально выкупить лот), 🌟️=1,65₽.")
+        await message.answer(TEXTS["create_lot_3_msg"])
     else:
-        await message.answer("🌟 Введите числовое значение, большее нуля.")
+        await message.answer(TEXTS["create_lot_3.3_msg"])
 
 @user_router.message(IsUser(), CreateLot.blitz_price)
 async def set_lots_photo(message: Message, state: FSMContext):
@@ -126,10 +123,10 @@ async def set_lots_photo(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) > data['starter_price']:
         await state.update_data(blitz_price=int(message.text))
         await state.set_state(CreateLot.completion_time)
-        await message.answer("🕒 Выберете кол-во часов через которое лот будет закрыт, если его не выкупят. 🕒",
+        await message.answer(text=TEXTS["create_lot_3.4_msg"],
                          reply_markup=kb.lot_times_menu)
     else:
-        await message.answer("🌟 Введите числовое значение, большее стартовой цены.")
+        await message.answer(TEXTS["create_lot_3.2_msg"])
 
 
 @user_router.callback_query(IsUser(), F.data == "one_hour", CreateLot.completion_time)
@@ -140,12 +137,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                                   caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                           f"Блитц цена: {data['blitz_price']}🌟\n"
-                                           f"Длительность лота(в часах): {data['hours']}\n"
-                                           f"Продавец: {cb.from_user.username}\n"
-                                   )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+                                  caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
+                                  )
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 @user_router.callback_query(IsUser(), F.data == "two_hour", CreateLot.completion_time)
@@ -156,12 +154,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                                   caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                           f"Блитц цена: {data['blitz_price']}🌟\n"
-                                           f"Длительность лота(в часах): {data['hours']}\n"
-                                           f"Продавец: {cb.from_user.username}\n"
+                                  caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                                    )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -174,12 +173,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                                  caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -192,12 +192,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                          caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -210,12 +211,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                          caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -228,12 +230,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                          caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -246,12 +249,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                          caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -264,12 +268,13 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
-                          caption=f"Стартовая цена: {data['starter_price']}🌟\n"
-                                  f"Блитц цена: {data['blitz_price']}🌟\n"
-                                  f"Длительность лота(в часах): {data['hours']}\n"
-                                  f"Продавец: {cb.from_user.username}\n"
+                          caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
+                                                                                 blitz_price=data['blitz_price'],
+                                                                                 hours=data['hours'],
+                                                                                 name=cb.from_user.first_name
+                                                                                 )
                           )
-    await cb.message.answer("📝 Ваш лот был отправлен на модерацию, после проверки мы опубликуем его, и вам придёт уведомление! 📝")
+    await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
 
@@ -277,8 +282,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await state.set_state(DepositBalance.number_stars)
-    await cb.message.edit_text("✍ Введите кол-во звезд,на которое вы хотите пополнить свой баланс. 💰\n"
-                               "🔁Если вы нажали на кнопку случайно, нажмите 'прервать' 🔁",
+    await cb.message.edit_text(text=TEXTS["deposit_balance_msg"],
                                reply_markup=kb.interrupt_work)
 
 @user_router.message(IsUser(), DepositBalance.number_stars)
@@ -286,7 +290,7 @@ async def deposit_balance_s(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
         await state.update_data(stars=int(message.text))
         data = await state.get_data()
-        await message.answer(f"Сейчас мы пришлём счет, на пополнение баланса на {data['stars']}🌟")
+        await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']))
         await state.clear()
         await message.bot.send_invoice(
             chat_id=message.chat.id,
@@ -299,12 +303,12 @@ async def deposit_balance_s(message: Message, state: FSMContext):
             photo_height=650,
             photo_size=800,
             payload=f"deposit_balance_{data['stars']}",
-            prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*1.65*100))],
+            prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*1.6*100))],
             need_email=True,
             send_email_to_provider=True
         )
     else:
-        await message.answer("📌 Минимальное числовое значение 50, а максимальное 15 000 📌")
+        await message.answer(TEXTS["limitations_deposit_balance_msg"])
 
 @user_router.pre_checkout_query(lambda query: True)
 async def pre_checkout_query(pcq: PreCheckoutQuery):
@@ -314,13 +318,13 @@ async def pre_checkout_query(pcq: PreCheckoutQuery):
 async def process_suc_payment(message: Message):
     stars = int(message.successful_payment.invoice_payload.split("_")[-1])
     await rq.deposit_balance(tg_id=message.from_user.id, stars=stars)
-    await message.answer(f"🎊 Вам успешно зачислено {stars}🌟️!")
+    await message.answer(TEXTS["successful_payment"].format(stars=stars))
 
 @user_router.callback_query(IsUser(), F.data == "interrupt_work")
 async def interrupt_work(cb: CallbackQuery, state: FSMContext):
     await cb.message.delete()
     await state.clear()
-    new_message = await cb.message.answer("Вы прервали работу!")
+    new_message = await cb.message.answer(TEXTS["interrupt_work_msg"])
     await asyncio.sleep(5)
     await new_message.delete()
 
@@ -370,18 +374,18 @@ async def buy_now(cb: CallbackQuery):
     if lot.status == LotStatus.SOLD:
         await cb.answer()
         await cb.message.delete()
-        await cb.message.answer("Лот уже выкуплен.")
+        await cb.message.answer(TEXTS["lot_sold_msg"])
         return
 
     elif lot.status == LotStatus.EXPIRED:
         await cb.answer()
         await cb.message.delete()
-        await cb.message.answer("Лот был закрыт по времени, его никто не купил.")
+        await cb.message.answer(TEXTS["lot_expired_msg"])
         return
 
     elif user.balance < lot.real_price:
         await cb.answer()
-        await cb.message.answer("💰На вашем балансе недостаточно звезд⭐, пополните баланс, нажав на кнопку ниже ⬇️",
+        await cb.message.answer(text=TEXTS["not_enough_stars"],
                                 reply_markup=kb.profile_menu)
         return
 
@@ -389,7 +393,7 @@ async def buy_now(cb: CallbackQuery):
 
     if applicant == cb.from_user.id:
         await cb.answer()
-        await cb.message.answer("⌛️Вы уже сделали ставку на этот лот, дождитесь пока её перебьют  или купите мгновенно⌛️")
+        await cb.message.answer(TEXTS["bet_is_already_yours_msg"])
         return
 
     await rq.buy_now(lot_id, cb.from_user.id)
@@ -401,19 +405,22 @@ async def buy_now(cb: CallbackQuery):
         await rq.increase_balance(lot.applicant, lot.real_price)
     await rq.decrease_balance(cb.from_user.id, lot.moment_buy_price)
     await cb.bot.send_message(chat_id=cb.from_user.id,
-                     text=f"Вы выкупили лот #{lot.id} за {lot.moment_buy_price}🌟. В течении часа @{seller.username} должен отправить ваи подарок.")
+                     text=TEXTS["user_buy_lot_msg"].format(id=lot.id,
+                                                           moment_buy_price=lot.moment_buy_price,
+                                                           username=seller.username
+                                                           ))
     await cb.bot.send_message(chat_id=lot.seller,
-                           text=f'Ваш лот #{lot.id} закончился. В нем есть победитель @{cb.from_user.username}. В течение часа вы должны отправить подарок, '
-                                f'если вы этого не сделаете покупатель может открыть спор и вернуть звезды, а вас забанят!')
+                           text=TEXTS["seller_send_gift_msg"].format(id=lot.id,
+                                                                     username=cb.from_user.username))
     lot = await rq.get_lot_data(lot_id)
     await cb.bot.edit_message_caption(
         chat_id=f"@{CHANNEL_ID}",
         message_id=lot.message_id,
-        caption=f"Лот: <b>#{lot.id}</b>\n"
-                f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
-                f"Последняя ставка: <b>{lot.moment_buy_price}</b>🌟\n"
-                f"Продвец: <b>{seller.name}</b>\n"
-                f"Статус: <b>{status_mapping.get(lot.status.value, "None")}</b>\n"
-                f"Покупатель: <b>{cb.from_user.first_name}</b>",
+        caption=TEXTS["sold_lot_caption"].format(starter_price=lot.starter_price,
+                                                 moment_buy_price=lot.moment_buy_price,
+                                                 seller=seller.name,
+                                                 status=status_mapping.get(lot.status.value, "None"),
+                                                 name=user.name
+                                                 ),
         parse_mode="HTML",
     )

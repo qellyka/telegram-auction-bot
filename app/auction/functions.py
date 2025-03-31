@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.db.engine import async_session
 from app.db.models import LotBase, LotStatus, LotModStatus
 import app.db.requests as rq
-from config import CHANNEL_ID, status_mapping, BOT_ID
+from config import CHANNEL_ID, status_mapping, BOT_ID, TEXTS
 
 
 async def check_expired_lots(bot: Bot):
@@ -40,35 +40,44 @@ async def process_lot(lot: LotBase, bot: Bot):
         lot.status = LotStatus.SOLD
         lot.buyer = winner.telegram_id
         await bot.send_message(chat_id=winner.telegram_id,
-                         text=f"Ваша ставка на лот #{lot.id} победила. В течение часа @{seller.username} должен отправить вам подарок, "
-                              f"если этого не случилось откройте спор.")
+                         text=TEXTS["you_win_lot"].format(
+                             id=lot.id,
+                             username=seller.username
+                         ))
         await bot.send_message(chat_id=lot.seller,
-                               text=f'Ваш лот #{lot.id} закончился. В нем есть победитель @{winner.username}. В течение часа вы должны отправить подарок, '
-                                    f'если вы этого не сделаете покупатель может открыть спор и вернуть звезды, а вас забанят!')
+                               text=TEXTS["seller_send_gift_msg"].format(
+                                   id=lot.id,
+                                   username=winner.username
+                               ))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
-            caption=f"Лот: <b>#{lot.id}</b>\n"
-                    f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
-                    f"Последняя ставка: <b>{lot.real_price}</b>🌟\n"
-                    f"Продвец: <b>{seller.name}</b>\n"
-                    f"Статус: <b>{status_mapping.get(lot.status.value, "None")}</b>\n"
-                    f"Покупатель: <b>{winner.name}</b>",
+            caption=TEXTS["sold_lot_caption"].format(
+                starter_price=lot.starter_price,
+                moment_buy_price=lot.moment_buy_price,
+                seller=seller.name,
+                status=status_mapping.get(lot.status.value, "None"),
+                name=winner.name
+            ),
             parse_mode="HTML",
         )
 
     else:
         lot.status = LotStatus.EXPIRED
         await bot.send_message(chat_id=lot.seller,
-                               text=f'Ваш лот #{lot.id} закончился. На него никто не сделал ставки.')
+                               text=TEXTS["seller_expired_lot_msg"].format(
+                                   id=lot.id
+                               ))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
-            caption=f"Лот: <b>#{lot.id}</b>\n"
-                    f"Стартовая цена: <b>{lot.starter_price}</b>🌟\n"
-                    f"Цена моментальной покупки: <b>{lot.moment_buy_price}</b>🌟\n"
-                    f"Продвец: <b>{seller.name}</b>\n"
-                    f"Статус: <b>{status_mapping.get(lot.status.value, "None")}</b>\n",
+            caption=TEXTS["expired_lot_caption"].format(
+                id=lot.id,
+                starter_price=lot.starter_price,
+                moment_buy_price=lot.moment_buy_price,
+                name=seller.name,
+                status=status_mapping.get(lot.status.value, "None")
+            ),
             parse_mode="HTML",
         )
 

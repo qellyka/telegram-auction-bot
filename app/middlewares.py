@@ -9,6 +9,8 @@ import app.admin.keyboards as kb
 
 from app.db.models import UserBase
 from app.db.engine import async_session
+from config import TEXTS
+
 
 class UserDBCheckMiddleware(BaseMiddleware):
     async def __call__(
@@ -21,7 +23,7 @@ class UserDBCheckMiddleware(BaseMiddleware):
             async with async_session() as session:
                 db_user = await session.scalar(select(UserBase).where(UserBase.telegram_id == user.id))
                 if not user.username:
-                    await event.answer("Извините, но у вас отсутствует username. Для того чтобы пользоваться ботом, создайте себе username, после чего повторите команду.")
+                    await event.answer(TEXTS["username_missing_msg"])
                     raise CancelHandler()
                 elif not db_user:
                     session.add(UserBase(
@@ -46,10 +48,14 @@ class UserBanCheckMiddleware(BaseMiddleware):
     ) -> Any:
             user = event.from_user
             async with async_session() as session:
-                db_user = await session.scalar(select(UserBase).where(UserBase.telegram_id == user.id))
+                db_user = await session.scalar(
+                    select(UserBase)
+                    .where(UserBase.telegram_id == user.id))
                 if db_user.is_banned:
-                    await event.answer(text="Похоже вы забанены, если вы считаете, что бан был выдан по ошибке, советуем обратиться в тех. поддержку.",
-                                       reply_markup=kb.tech_bot_menu)
+                    await event.answer(
+                        text=TEXTS["you_are_banned_msg"],
+                        reply_markup=kb.tech_bot_menu
+                    )
                     raise CancelHandler()
 
             return await handler(event, data)
@@ -64,13 +70,13 @@ class UserBanCheckMiddlewareCB(BaseMiddleware):
         user = event.from_user
         async with async_session() as session:
             db_user = await session.scalar(
-                select(UserBase).where(UserBase.telegram_id == user.id)
+                select(UserBase)
+                .where(UserBase.telegram_id == user.id)
             )
             if db_user and db_user.is_banned:
                 await event.answer(
-                    text="Похоже, вы забанены. Если вы считаете, что бан был выдан по ошибке, советуем обратиться в техподдержку.",
-                    reply_markup=kb.tech_bot_menu,
-                    show_alert=True
+                    text=TEXTS["you_are_banned_msg"],
+                    reply_markup=kb.tech_bot_menu
                 )
                 raise CancelHandler()
 
