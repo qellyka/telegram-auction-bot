@@ -383,17 +383,15 @@ async def buy_now(cb: CallbackQuery):
         await cb.message.answer(TEXTS["lot_expired_msg"])
         return
 
+    elif lot.moment_buy_price < lot.real_price:
+        await cb.answer()
+        await cb.message.answer(TEXTS["moment_price_men_real_price"])
+        return
+
     elif user.balance < lot.real_price:
         await cb.answer()
         await cb.message.answer(text=TEXTS["not_enough_stars"],
                                 reply_markup=kb.profile_menu)
-        return
-
-    applicant = await rq.get_lot_applicant(lot_id)
-
-    if applicant == cb.from_user.id:
-        await cb.answer()
-        await cb.message.answer(TEXTS["bet_is_already_yours_msg"])
         return
 
     await rq.buy_now(lot_id, cb.from_user.id)
@@ -403,7 +401,10 @@ async def buy_now(cb: CallbackQuery):
     elif lot.applicant and lot.applicant != cb.from_user.id:
         await rq.set_lot_applicant(lot_id, cb.from_user.id)
         await rq.increase_balance(lot.applicant, lot.real_price)
+
     await rq.decrease_balance(cb.from_user.id, lot.moment_buy_price)
+    await rq.increase_balance(lot.seller, lot.moment_buy_price)
+
     await cb.bot.send_message(chat_id=cb.from_user.id,
                      text=TEXTS["user_buy_lot_msg"].format(id=lot.id,
                                                            moment_buy_price=lot.moment_buy_price,

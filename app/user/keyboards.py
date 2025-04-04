@@ -1,7 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 main_menu = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="🎫Создать лот")],
+    [KeyboardButton(text="🎫Создать лот"), KeyboardButton(text="📜Ваши Лоты")],
+    [KeyboardButton(text="👨‍👩‍👧‍👦Реферальная программа")],
     [KeyboardButton(text="🪪Профиль"),KeyboardButton(text="Вывести ⭐"), KeyboardButton(text="🛠️Тех. поддержка")] #KeyboardButton(text="📜Ваши Лоты"),
 ],
     resize_keyboard=True,

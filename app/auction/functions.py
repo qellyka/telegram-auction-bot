@@ -39,6 +39,7 @@ async def process_lot(lot: LotBase, bot: Bot):
     if winner:
         lot.status = LotStatus.SOLD
         lot.buyer = winner.telegram_id
+        await rq.increase_balance(lot.seller, lot.real_price)
         await bot.send_message(chat_id=winner.telegram_id,
                          text=TEXTS["you_win_lot"].format(
                              id=lot.id,
