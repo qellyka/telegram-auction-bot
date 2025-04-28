@@ -13,6 +13,8 @@ sqlalchemy = "^2.0.39"
 psycopg = "^3.2.6"
 psycopg-binary = "^3.2.6"
 asyncpg = "^0.30.0"
+yoomoney = "^0.1.2"
+requests = "^2.32.3"
 
 
 [build-system]
