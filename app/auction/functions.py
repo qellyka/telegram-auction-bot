@@ -8,7 +8,9 @@ from sqlalchemy import select
 from app.db.engine import async_session
 from app.db.models import LotBase, LotStatus, LotModStatus
 import app.db.requests as rq
-from config import CHANNEL_ID, status_mapping, BOT_ID, TEXTS
+from config import CHANNEL_ID, status_mapping, TEXTS
+
+import app.auction.keyboards as kb
 
 
 async def check_expired_lots(bot: Bot):
@@ -39,17 +41,18 @@ async def process_lot(lot: LotBase, bot: Bot):
     if winner:
         lot.status = LotStatus.SOLD
         lot.buyer = winner.telegram_id
-        await rq.increase_balance(lot.seller, lot.real_price)
         await bot.send_message(chat_id=winner.telegram_id,
-                         text=TEXTS["you_win_lot"].format(
-                             id=lot.id,
-                             username=seller.username
-                         ))
+                               text=TEXTS["you_win_lot"].format(
+                                   id=lot.id,
+                                   username=seller.username
+                               ),
+                               reply_markup=kb.trade_menu)
         await bot.send_message(chat_id=lot.seller,
                                text=TEXTS["seller_send_gift_msg"].format(
                                    id=lot.id,
                                    username=winner.username
-                               ))
+                               ),
+                               reply_markup=kb.trade_seller_menu)
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
@@ -87,3 +90,15 @@ async def background_tasks(bot: Bot):
         await check_expired_lots(bot)
         await asyncio.sleep(60)
 
+
+async def mark_payment_as_paid(bot: Bot, label: str, amount: float):
+    try:
+        user_id = int(label)  # Преобразуем label в целое число (у тебя это user_id)
+        stars = int(amount)  # Например, если 1 рубль = 1 звезда
+
+        await rq.deposit_balance(tg_id=user_id, stars=stars)
+
+        await bot.send_message(user_id, f"✅ Ваш баланс успешно пополнен на {stars} ⭐️. Спасибо за оплату!")
+
+    except Exception as e:
+        print(f"❌ Ошибка обработки платежа для label={label}: {e}")
