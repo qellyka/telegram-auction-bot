@@ -3,9 +3,11 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQu
 from app.db.models import LotStatus
 import app.db.requests as rq
 
-from config import BOT_ID, CHANNEL_ID, status_mapping, TEXTS
+from config import BOT_ID, CHANNEL_ID, status_mapping, TEXTS, YOO_TOKEN
 
 import app.user.keyboards as kb
+
+from yoomoney import Client, Quickpay
 
 async def bid_lot(lot, bid: int, cb: CallbackQuery, lot_id: int, user_id: int):
     seller = await rq.get_user_data_id(lot.user_id)
@@ -80,3 +82,18 @@ async def bid_lot(lot, bid: int, cb: CallbackQuery, lot_id: int, user_id: int):
          ]
         )
     )
+
+async def create_payment_link(dep: int, payment_label: str):
+    token = YOO_TOKEN
+    client = Client(token=token)
+    user = client.account_info()
+    quickpay = Quickpay(
+        receiver=user.account,
+        quickpay_form="shop",
+        targets="deposit",
+        paymentType="AC",
+        sum=dep,
+        label=payment_label,
+        need_email=True
+    )
+    return(quickpay.base_url)
