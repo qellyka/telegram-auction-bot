@@ -32,12 +32,12 @@ async def menu(message: Message):
     await message.answer(text=TEXTS["main_menu_msg"],
                          reply_markup=kb.admin_menu)
 
-@admin_router.message(IsAdmin(), F.text == "🛠️Вопросы пользователей")
+@admin_router.message(IsAdmin(), F.text == "📢 Вопросы пользователей")
 async def tech_channel(message: Message):
     await message.answer(text=TEXTS["tech_channel_msg"],
                          reply_markup=kb.tech_channel_menu)
 
-@admin_router.message(IsAdmin(), F.text == "🃏Черный список")
+@admin_router.message(IsAdmin(), F.text == "🛑 Чёрный список")
 async def view_black_list(message: Message):
     users = await rq.get_blocked_users()
     if users:
@@ -47,7 +47,7 @@ async def view_black_list(message: Message):
     else:
         await message.answer(text=TEXTS["banned_list_msg_empty_msg"])
 
-@admin_router.message(IsAdmin(), F.text == "🪪Управление пользователями")
+@admin_router.message(IsAdmin(), F.text == "🧑‍💼 Пользователи")
 async def manage_users(message: Message, state: FSMContext):
     await state.set_state(ManageUser.username)
     await message.answer(text=TEXTS["send_user_username_msg"],
@@ -115,7 +115,7 @@ async def ban_user(cb: CallbackQuery):
                               text=TEXTS["send_unban_msg"])
 
 
-@admin_router.message(IsAdmin(), F.text == "🎫Посмотреть новые лоты")
+@admin_router.message(IsAdmin(), F.text == "📥 Новые лоты на модерации")
 async def new_lots_menu(message: Message):
     lot = await rq.get_first_new_lot()
     if lot:

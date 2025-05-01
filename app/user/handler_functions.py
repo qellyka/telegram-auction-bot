@@ -97,3 +97,4 @@ async def create_payment_link(dep: int, payment_label: str):
         need_email=True
     )
     return(quickpay.base_url)
+

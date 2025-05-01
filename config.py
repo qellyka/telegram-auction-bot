@@ -10,6 +10,7 @@ DB_URL = os.getenv('DB_URL')
 PAYMENTS_TOKEN = os.getenv('PAYMENTS_TOKEN')
 BOT_ID = os.getenv('BOT_ID')
 YOO_TOKEN = os.getenv('YOO_TOKEN')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 status_mapping = {
     'SOLD': 'Продан',

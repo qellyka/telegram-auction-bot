@@ -1,12 +1,20 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 main_menu = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="🎫Создать лот"), KeyboardButton(text="📜Ваши Лоты")],
+    [KeyboardButton(text="🎫Создать лот"), KeyboardButton(text="📊 Мои аукционы")],
     [KeyboardButton(text="👨‍👩‍👧‍👦Реферальная программа")],
-    [KeyboardButton(text="🪪Профиль"),KeyboardButton(text="Вывести ⭐"), KeyboardButton(text="🛠️Тех. поддержка")] #KeyboardButton(text="📜Ваши Лоты"),
+    [KeyboardButton(text="🪪Профиль"),KeyboardButton(text="Вывести ⭐"), KeyboardButton(text="🛠️Тех. поддержка")]
 ],
     resize_keyboard=True,
     input_field_placeholder="Выберите пункт меню")
+
+user_auction_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="📦 Мои лоты", callback_data="my_lots")],
+    [InlineKeyboardButton(text="📈 Мои ставки", callback_data="my_bids")],
+    [InlineKeyboardButton(text="⭐ Избранные", callback_data="my_favorites")],
+    [InlineKeyboardButton(text="↩️ Назад", callback_data="back_to_main")]
+])
+
 
 profile_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Пополнить баланс.",
