@@ -253,7 +253,7 @@ async def decrease_balance(tg_id: BigInteger, bid: int):
         user.balance -= bid
         await session.commit()
 
-async def buy_now(lot_id, user_id):
+async def buy_now(lot_id, user_id, real_price: int):
     async with async_session() as session:
         lot = await session.scalar(
                 select(LotBase)
@@ -263,4 +263,5 @@ async def buy_now(lot_id, user_id):
         lot.status = LotStatus.SOLD
         lot.buyer = user_id
         lot.applicant = user_id
+        lot.real_price = real_price
         await session.commit()

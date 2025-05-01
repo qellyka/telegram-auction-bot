@@ -254,7 +254,8 @@ async def reject_lot(cb: CallbackQuery):
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
-        msg = await cb.message.edit_text(TEXTS["no_new_lots_msg"])
+        await cb.message.delete()
+        msg = await cb.message.answer(TEXTS["no_new_lots_msg"])
         await asyncio.sleep(3)
         await msg.delete()
 

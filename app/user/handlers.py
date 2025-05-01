@@ -21,7 +21,7 @@ import app.user.keyboards as kb
 
 from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS
 
-from app.user.handler_functions import bid_lot
+from app.user.handler_functions import bid_lot, create_payment_link
 
 user_router = Router()
 
@@ -123,7 +123,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) > data['starter_price']:
         await state.update_data(blitz_price=int(message.text))
         await state.set_state(CreateLot.completion_time)
-        await message.answer(text=TEXTS["create_lot_3.4_msg"],
+        await message.answer(text=TEXTS["create_lot_4_msg"],
                          reply_markup=kb.lot_times_menu)
     else:
         await message.answer(TEXTS["create_lot_3.2_msg"])
@@ -285,6 +285,25 @@ async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text=TEXTS["deposit_balance_msg"],
                                reply_markup=kb.interrupt_work)
 
+# @user_router.message(IsUser(), DepositBalance.number_stars)
+# async def deposit_balance_s(message: Message, state: FSMContext):
+#     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
+#         await state.update_data(stars=int(message.text))
+#         data = await state.get_data()
+#         user = await rq.get_user_data(message.from_user.id)
+#         url = await create_payment_link(dep=data['stars'], payment_label=user.id)
+#         await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
+#                              reply_markup=InlineKeyboardMarkup(
+#                                  inline_keyboard=[
+#                                     [InlineKeyboardButton(text="Оплатить",
+#                                                           url=url)],
+#                                     [InlineKeyboardButton(text="Отменить",
+#                                                           callback_data="interrupt_work")]
+#                                  ]))
+#         await state.clear()
+#     else:
+#         await message.answer(TEXTS["limitations_deposit_balance_msg"])
+
 @user_router.message(IsUser(), DepositBalance.number_stars)
 async def deposit_balance_s(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
@@ -394,7 +413,7 @@ async def buy_now(cb: CallbackQuery):
                                 reply_markup=kb.profile_menu)
         return
 
-    await rq.buy_now(lot_id, cb.from_user.id)
+    await rq.buy_now(lot_id, cb.from_user.id, lot.moment_buy_price)
 
     if lot.applicant and lot.applicant == cb.from_user.id:
         await rq.increase_balance(cb.from_user.id, lot.real_price)
@@ -403,16 +422,26 @@ async def buy_now(cb: CallbackQuery):
         await rq.increase_balance(lot.applicant, lot.real_price)
 
     await rq.decrease_balance(cb.from_user.id, lot.moment_buy_price)
-    await rq.increase_balance(lot.seller, lot.moment_buy_price)
+
+    sell_msg = await cb.bot.send_message(chat_id=lot.seller,
+                              text=TEXTS["seller_send_gift_msg"].format(id=lot.id,
+                                                                        username=cb.from_user.username),
+                              reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                  [InlineKeyboardButton(text="Открыть спор",
+                                                        callback_data=f"open_issue_{lot.id}")]
+                              ]))
 
     await cb.bot.send_message(chat_id=cb.from_user.id,
-                     text=TEXTS["user_buy_lot_msg"].format(id=lot.id,
-                                                           moment_buy_price=lot.moment_buy_price,
-                                                           username=seller.username
-                                                           ))
-    await cb.bot.send_message(chat_id=lot.seller,
-                           text=TEXTS["seller_send_gift_msg"].format(id=lot.id,
-                                                                     username=cb.from_user.username))
+                              text=TEXTS["user_buy_lot_msg"].format(id=lot.id,
+                                                                    moment_buy_price=lot.moment_buy_price,
+                                                                    username=seller.username
+                                                                    ),
+                              reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                                [InlineKeyboardButton(text="Подтвердить отправку",
+                                                                      callback_data=f"accept_trade_{lot.id}_{sell_msg.message_id}")],
+                                                [InlineKeyboardButton(text="Открыть спор",
+                                                                      callback_data=f"open_issue_{lot.id}")]
+                               ]))
     lot = await rq.get_lot_data(lot_id)
     await cb.bot.edit_message_caption(
         chat_id=f"@{CHANNEL_ID}",
@@ -421,7 +450,21 @@ async def buy_now(cb: CallbackQuery):
                                                  moment_buy_price=lot.moment_buy_price,
                                                  seller=seller.name,
                                                  status=status_mapping.get(lot.status.value, "None"),
-                                                 name=user.name
+                                                 name=user.name,
+                                                 id=lot.id
                                                  ),
         parse_mode="HTML",
     )
+    await cb.answer()
+
+@user_router.callback_query(IsUser(), lambda cb: re.match(r"^accept_trade_\d+_\d+$", cb.data))
+async def accept_trade(cb: CallbackQuery):
+    lot_id = int(cb.data.split("_")[-2])
+    lot = await rq.get_lot_data(lot_id)
+    seller = await rq.get_user_data(lot.seller)
+    await cb.message.delete()
+    await cb.message.answer("Благодарим вас за покупку, ждём вас сново!")
+    await rq.increase_balance(seller.telegram_id, lot.moment_buy_price)
+    msg = await cb.bot.edit_message_text(chat_id=seller.telegram_id,
+                                         message_id=int(cb.data.split("_")[-1]),
+                                         text=f"Вам переведены звезды в кол-ве {lot.moment_buy_price}🌟, за успешную продажу подарка #{lot.id}. Бладгодарим вас и ждем сново!")

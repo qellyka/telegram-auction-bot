@@ -44,6 +44,6 @@ lot_times_menu = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 interrupt_work = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Прервать",
+    [InlineKeyboardButton(text="Отменить",
                           callback_data="interrupt_work")]
 ])

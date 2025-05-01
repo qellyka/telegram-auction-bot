@@ -33,6 +33,7 @@ class UserBase(Base):
     username: Mapped[str]
     balance: Mapped[int] = mapped_column(default=0)
     lots: Mapped[int] = mapped_column(default=0)
+    ref_code: Mapped[Optional[str]]
     warns: Mapped[int] = mapped_column(default=0)
 
     def __repr__(self):

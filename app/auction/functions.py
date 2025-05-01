@@ -3,6 +3,7 @@ import datetime
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from sqlalchemy import select
 
 from app.db.engine import async_session
@@ -10,7 +11,6 @@ from app.db.models import LotBase, LotStatus, LotModStatus
 import app.db.requests as rq
 from config import CHANNEL_ID, status_mapping, TEXTS
 
-import app.auction.keyboards as kb
 
 
 async def check_expired_lots(bot: Bot):
@@ -46,13 +46,21 @@ async def process_lot(lot: LotBase, bot: Bot):
                                    id=lot.id,
                                    username=seller.username
                                ),
-                               reply_markup=kb.trade_menu)
+                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                                [InlineKeyboardButton(text="Подтвердить отправку",
+                                                                      callback_data=f"accept_trade_{lot.id}")],
+                                                [InlineKeyboardButton(text="Открыть спор",
+                                                                      callback_data=f"open_issue_{lot.id}")]
+                               ]))
         await bot.send_message(chat_id=lot.seller,
                                text=TEXTS["seller_send_gift_msg"].format(
                                    id=lot.id,
                                    username=winner.username
                                ),
-                               reply_markup=kb.trade_seller_menu)
+                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                                [InlineKeyboardButton(text="Открыть спор",
+                                                                      callback_data=f"open_issue_{lot.id}")]
+]))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
@@ -93,8 +101,8 @@ async def background_tasks(bot: Bot):
 
 async def mark_payment_as_paid(bot: Bot, label: str, amount: float):
     try:
-        user_id = int(label)  # Преобразуем label в целое число (у тебя это user_id)
-        stars = int(amount)  # Например, если 1 рубль = 1 звезда
+        user_id = int(label)
+        stars = int(amount)
 
         await rq.deposit_balance(tg_id=user_id, stars=stars)
 
