@@ -10,7 +10,9 @@ DB_URL = os.getenv('DB_URL')
 PAYMENTS_TOKEN = os.getenv('PAYMENTS_TOKEN')
 BOT_ID = os.getenv('BOT_ID')
 YOO_TOKEN = os.getenv('YOO_TOKEN')
-SECRET_KEY = os.getenv('SECRET_KEY')
+YOO_SECRET = os.getenv('YOO_SECRET')
+YOOMONEY_WEBHOOK_PATH=os.getenv('YOOMONEY_WEBHOOK_PATH')
+TELEGRAM_WEBHOOK_PATH=os.getenv('TELEGRAM_WEBHOOK_PATH')
 
 status_mapping = {
     'SOLD': 'Продан',
