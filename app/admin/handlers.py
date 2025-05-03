@@ -27,6 +27,12 @@ admin_router.message.outer_middleware(UserDBCheckMiddleware())
 class ManageUser(StatesGroup):
     username = State()
 
+class ManageBalance(StatesGroup):
+    sum = State()
+
+class WarnUser(StatesGroup):
+    reason = State()
+
 @admin_router.message(IsAdmin(), Command("menu"))
 async def menu(message: Message):
     await message.answer(text=TEXTS["main_menu_msg"],
@@ -68,6 +74,10 @@ async def manage_users_state(message: Message, state: FSMContext):
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                 [InlineKeyboardButton(text="Разбанить пользователя",
                                                                       callback_data=f"unban_user_{user.telegram_id}")],
+                                                [InlineKeyboardButton(text="Редактировать баланс",
+                                                                      callback_data=f"edit_balance_{user.telegram_id}")],
+                                                [InlineKeyboardButton(text="Выдать предупреждение",
+                                                                      callback_data=f"warn_user_{user.telegram_id}")],
                                                 [InlineKeyboardButton(text="Посмотреть лоты пользователя",
                                                                       callback_data=f"user_lots_{user.telegram_id}")],
                                                 [InlineKeyboardButton(text="Написать пользователю",
@@ -84,6 +94,10 @@ async def manage_users_state(message: Message, state: FSMContext):
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                      [InlineKeyboardButton(text="Забанить пользователя",
                                                            callback_data=f"ban_user_{user.telegram_id}")],
+                                     [InlineKeyboardButton(text="Редактировать баланс",
+                                                           callback_data=f"edit_balance_{user.telegram_id}")],
+                                     [InlineKeyboardButton(text="Выдать предупреждение",
+                                                           callback_data=f"warn_user_{user.telegram_id}")],
                                      [InlineKeyboardButton(text="Посмотреть лоты пользователя",
                                                            callback_data=f"user_lots_{user.telegram_id}")],
                                      [InlineKeyboardButton(text="Написать пользователю",
@@ -96,6 +110,72 @@ async def manage_users_state(message: Message, state: FSMContext):
     else:
         await message.answer(TEXTS["user_not_found"])
 
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^edit_balance_\d+$", cb.data))
+async def edit_balance(cb: CallbackQuery):
+    await cb.answer()
+    tg_id = int(cb.data.split("_")[-1])
+    await cb.message.edit_text(text="Выберите действие: ",
+                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                     [InlineKeyboardButton(text="Увеличить баланс",
+                                                           callback_data=f"increase_bal_{tg_id}")],
+                                     [InlineKeyboardButton(text="Уменьшить баланс",
+                                                           callback_data=f"decrease_bal_{tg_id}")]
+                               ]))
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^increase_bal_\d+$", cb.data))
+async def increase_balance_msg(cb: CallbackQuery, state: FSMContext):
+    tg_id = int(cb.data.split("_")[-1])
+    await state.set_state(ManageBalance.sum)
+    await state.update_data(id=tg_id)
+    await cb.message.answer("Введите кол-во 🌟, на которое вы хотите увеличить баланс пользователя: ")
+
+@admin_router.message(IsAdmin(), ManageBalance.sum)
+async def increase_balance(message: Message, state: FSMContext):
+    data = await state.get_data()
+    user = await rq.get_user_data(data[id])
+    if message.text and message.text.isdigit():
+        await rq.increase_balance(data[id], message.text)
+        await message.edit_text(TEXTS["Баланс успешно увеличен!"])
+        await message.bot.send_message(chat_id=data[id],
+                                  text=TEXTS[f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота."],
+                                  reply_markup=kb.tech_bot_menu)
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^decrease_bal_\d+$", cb.data))
+async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
+    tg_id = int(cb.data.split("_")[-1])
+    await state.set_state(ManageBalance.sum)
+    await state.update_data(id=tg_id)
+    await cb.message.answer("Введите кол-во 🌟, на которое вы хотите уменьшить баланс пользователя: ")
+
+@admin_router.message(IsAdmin(), ManageBalance.sum)
+async def decrease_balance(message: Message, state: FSMContext):
+    data = await state.get_data()
+    user = await rq.get_user_data(data[id])
+    if message.text and message.text.isdigit() and message.text <= user.balance:
+        await rq.decrease_balance(data[id], message.text)
+        await message.edit_text(TEXTS["Баланс успешно уменьшен!"])
+        await message.bot.send_message(chat_id=data[id],
+                                  text=TEXTS[f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота."],
+                                  reply_markup=kb.tech_bot_menu)
+        await state.clear()
+    else:
+        await message.answer("Вы должны ввести числовое значение, меньшее значения текущего баланса.")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^warn_user_\d+$", cb.data))
+async def warn_reason(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.set_state(WarnUser.reason)
+    tg_id = int(cb.data.split("_")[-1])
+    await cb.message.answer(text="Введите причину выдачи предупреждения: ")
+    await state.update_data(id=tg_id)
+
+@admin_router.callback_query(IsAdmin(), WarnUser.reason)
+async def warn_user(message: Message, state: FSMContext):
+    data = state.get_data()
+    await rq.warn_user(utid=int(data['id']), atid=message.from_user.id, reason=message.text)
+    await message.answer("Предупреждение успешно выдано!")
+    await message.bot.send_message(chat_id=data['id'],
+                                   text="Вам было выдано предупреждение. За дополнительной информацией обращайтесь в тех. поддержку.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^ban_user_\d+$", cb.data))
 async def ban_user(cb: CallbackQuery):

@@ -54,6 +54,7 @@ class WarnBase(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     reason: Mapped[Optional[str]]
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
 

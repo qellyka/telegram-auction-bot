@@ -10,7 +10,8 @@ from app.db.models import (
     LotBase,
     LotStatus,
     LotModStatus,
-    ReferralBase
+    ReferralBase,
+    WarnBase
 )
 
 # ----------------- LOT FUNCTIONS -----------------
@@ -167,6 +168,14 @@ async def unban_user(tid: BigInteger):
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tid).with_for_update())
         user.is_banned = False
         await session.commit()
+
+async def warn_user(utid: BigInteger, atid: BigInteger, reason: str):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id == utid).with_for_update())
+        admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == atid).with_for_update())
+        session.add(WarnBase(user_id = user.id, admin_id = admin.id, reason=reason))
+        await session.commit()
+
 
 async def get_blocked_users():
     async with async_session() as session:
