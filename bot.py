@@ -92,7 +92,7 @@ async def yoomoney_webhook(request: Request):
         logging.warning(f"Invalid SHA1: expected {calculated_hash}, got {data['sha1_hash']}")
         raise HTTPException(status_code=403, detail="Invalid signature")
 
-    amount = float(data["amount"])
+    amount = float(data["withdraw_amount"])
     logging.info(f"✅ YooMoney payment confirmed: {data}")
 
     await send_payment_confirmation(user_id=int(label),
