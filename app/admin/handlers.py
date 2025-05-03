@@ -27,7 +27,10 @@ admin_router.message.outer_middleware(UserDBCheckMiddleware())
 class ManageUser(StatesGroup):
     username = State()
 
-class ManageBalance(StatesGroup):
+class ManageBalanceI(StatesGroup):
+    sum = State()
+
+class ManageBalanceD(StatesGroup):
     sum = State()
 
 class WarnUser(StatesGroup):
@@ -126,11 +129,11 @@ async def edit_balance(cb: CallbackQuery):
 async def increase_balance_msg(cb: CallbackQuery, state: FSMContext):
     await cb.answer()
     tg_id = int(cb.data.split("_")[-1])
-    await state.set_state(ManageBalance.sum)
+    await state.set_state(ManageBalanceI.sum)
     await state.update_data(id=tg_id)
     await cb.message.answer("Введите кол-во 🌟, на которое вы хотите увеличить баланс пользователя: ")
 
-@admin_router.message(IsAdmin(), ManageBalance.sum)
+@admin_router.message(IsAdmin(), ManageBalanceI.sum)
 async def increase_balance(message: Message, state: FSMContext):
     data = await state.get_data()
     user = await rq.get_user_data(data['id'])
@@ -148,11 +151,11 @@ async def increase_balance(message: Message, state: FSMContext):
 async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
     await cb.answer()
     tg_id = int(cb.data.split("_")[-1])
-    await state.set_state(ManageBalance.sum)
+    await state.set_state(ManageBalanceD.sum)
     await state.update_data(id=tg_id)
     await cb.message.answer("Введите кол-во 🌟, на которое вы хотите уменьшить баланс пользователя: ")
 
-@admin_router.message(IsAdmin(), ManageBalance.sum)
+@admin_router.message(IsAdmin(), ManageBalanceD.sum)
 async def decrease_balance(message: Message, state: FSMContext):
     data = await state.get_data()
     user = await rq.get_user_data(data['id'])
