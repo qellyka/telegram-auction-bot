@@ -65,6 +65,7 @@ async def process_lot(lot: LotBase, bot: Bot):
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
             caption=TEXTS["sold_lot_caption"].format(
+                id=lot.id,
                 starter_price=lot.starter_price,
                 moment_buy_price=lot.moment_buy_price,
                 seller=seller.name,
