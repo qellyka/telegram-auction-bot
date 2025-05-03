@@ -141,6 +141,8 @@ async def get_user_data(tg_id: BigInteger):
 async def get_user_data_ref(ref_code: str):
     async with async_session() as session:
         referral = await session.scalar(select(ReferralBase).where(ReferralBase.link == ref_code))
+        if referral is None:
+            print("Referral is not found")
         return await session.scalar(select(UserBase).where(UserBase.id == referral.user_id))
 
 async def get_user_data_id(id: BigInteger):
