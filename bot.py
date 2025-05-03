@@ -22,15 +22,14 @@ import app.db.requests as rq
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-async def send_payment_confirmation(user_id: int, amount: float, message_id: int):
+async def send_payment_confirmation(user_id: int, amount: float):
     stars = int(amount / STAR_K)
     try:
         user = await rq.get_user_data(user_id)
         await rq.deposit_balance(tg_id=user_id, stars=stars)
         if user.ref_id:
             await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
-            await bot.edit_message_text(chat_id=user.ref_id,
-                                        message_id=message_id,
+            await bot.send_message(chat_id=user.ref_id,
                                         text=TEXTS['ref_stars'].format(stars=int(stars*5/100)))
         await bot.send_message(user_id, TEXTS["successful_payment"].format(stars=stars))
 
@@ -103,12 +102,10 @@ async def yoomoney_webhook(request: Request):
 
     amount = float(data["withdraw_amount"])
     logging.info(f"✅ YooMoney payment confirmed: {data}")
-    user_id = label.split('_')[0]
-    message_id = label.split('_')[1]
+    user_id = label
     print(f"\n\n{user_id}\n\n")
     await send_payment_confirmation(user_id=int(user_id),
-                                    amount=amount,
-                                    message_id = int(message_id))
+                                    amount=amount)
 
     return {"status": "ok"}
 

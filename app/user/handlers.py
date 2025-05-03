@@ -338,22 +338,29 @@ async def deposit_balance(cb: CallbackQuery, state: FSMContext):
 
 @user_router.message(IsUser(), DepositBalance.number_stars)
 async def deposit_balance_s(message: Message, state: FSMContext):
+    await message.edit_text(TEXTS['deposit_balance_msg_2'])
     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
         await state.update_data(stars=int(message.text))
         data = await state.get_data()
         user = await rq.get_user_data(message.from_user.id)
-        url = await create_payment_link(dep=data['stars']*STAR_K, payment_label=f"{user.telegram_id}_{message.message_id}")
+        url = await create_payment_link(dep=data['stars']*STAR_K, payment_label=user.telegram_id)
         await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
                              reply_markup=InlineKeyboardMarkup(
                                  inline_keyboard=[
                                     [InlineKeyboardButton(text="Оплатить",
-                                                          url=url)],
+                                                          url=url,
+                                                          callback_data="delete_payment_msg")],
                                     [InlineKeyboardButton(text="Отменить",
                                                           callback_data="interrupt_work")]
                                  ]))
         await state.clear()
     else:
         await message.answer(TEXTS["limitations_deposit_balance_msg"])
+
+@user_router.callback_query(IsUser(), F.data == "delete_payment_msg")
+async def interrupt_work(cb: CallbackQuery, state: FSMContext):
+    await cb.message.delete()
+    await state.clear()
 
 # @user_router.message(IsUser(), DepositBalance.number_stars)
 # async def deposit_balance_s(message: Message, state: FSMContext):
