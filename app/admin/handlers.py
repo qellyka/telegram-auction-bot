@@ -133,9 +133,9 @@ async def increase_balance_msg(cb: CallbackQuery, state: FSMContext):
 @admin_router.message(IsAdmin(), ManageBalance.sum)
 async def increase_balance(message: Message, state: FSMContext):
     data = await state.get_data()
-    user = await rq.get_user_data(data[id])
+    user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit():
-        await rq.increase_balance(data[id], message.text)
+        await rq.increase_balance(data['id'], message.text)
         await message.edit_text(TEXTS["Баланс успешно увеличен!"])
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота."],
@@ -152,9 +152,9 @@ async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
 @admin_router.message(IsAdmin(), ManageBalance.sum)
 async def decrease_balance(message: Message, state: FSMContext):
     data = await state.get_data()
-    user = await rq.get_user_data(data[id])
+    user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit() and message.text <= user.balance:
-        await rq.decrease_balance(data[id], message.text)
+        await rq.decrease_balance(data['id'], message.text)
         await message.edit_text(TEXTS["Баланс успешно уменьшен!"])
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота."],
