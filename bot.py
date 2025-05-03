@@ -105,8 +105,8 @@ async def yoomoney_webhook(request: Request):
     logging.info(f"✅ YooMoney payment confirmed: {data}")
     user_id = label.split('_')[0]
     message_id = label.split('_')[1]
-    print(f"\n\n{user_id}_{message_id}\n\n")
-    await send_payment_confirmation(user_id=int(label),
+    print(f"\n\n{user_id}\n\n")
+    await send_payment_confirmation(user_id=int(user_id),
                                     amount=amount,
                                     message_id = int(message_id))
 
