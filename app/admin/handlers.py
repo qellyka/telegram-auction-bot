@@ -173,7 +173,7 @@ async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
 async def decrease_balance(message: Message, state: FSMContext):
     data = await state.get_data()
     user = await rq.get_user_data(data['id'])
-    if message.text and message.text.isdigit() and message.text <= user.balance:
+    if message.text and message.text.isdigit() and int(message.text) <= user.balance:
         await rq.decrease_balance(data['id'], int(message.text))
         await message.answer("Баланс успешно уменьшен!")
         await message.bot.send_message(chat_id=data['id'],
