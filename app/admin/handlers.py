@@ -241,7 +241,7 @@ async def new_lots_menu(message: Message):
                                        real_price=lot.real_price,
                                        min_next_price=lot.real_price + 1,
                                        moment_buy_price=lot.moment_buy_price,
-                                       name=seller.name,
+                                       name=seller.username,
                                        expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M')
                                    ),
                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -302,7 +302,7 @@ async def approve_lot(cb: CallbackQuery):
                                           real_price=next_lot.real_price,
                                           min_next_price=next_lot.real_price + 1,
                                           moment_buy_price=next_lot.moment_buy_price,
-                                          name=nx_seller.name,
+                                          name=nx_seller.username,
                                           expired_at=next_lot.expired_at.strftime('%d.%m.%Y %H:%M'),
                                           status=status_mapping.get(next_lot.status.value)
                                       ),
@@ -349,7 +349,7 @@ async def reject_lot(cb: CallbackQuery):
                                           real_price=next_lot.real_price,
                                           min_next_price=next_lot.real_price + 1,
                                           moment_buy_price=next_lot.moment_buy_price,
-                                          name=nx_seller.name,
+                                          name=nx_seller.username,
                                           expired_at=next_lot.expired_at.strftime('%d.%m.%Y %H:%M'),
                                           status=status_mapping.get(next_lot.status.value)
                                       ),
@@ -387,7 +387,7 @@ async def reject_lot(cb: CallbackQuery):
                                           real_price=next_lot.real_price,
                                           min_next_price=next_lot.real_price + 1,
                                           moment_buy_price=next_lot.moment_buy_price,
-                                          name=nx_seller.name,
+                                          name=nx_seller.username,
                                           expired_at=next_lot.expired_at.strftime('%d.%m.%Y %H:%M'),
                                           status=status_mapping.get(next_lot.status.value)
                                       ),
@@ -422,7 +422,7 @@ async def reject_lot(cb: CallbackQuery):
                                           real_price=prev_lot.real_price,
                                           min_next_price=prev_lot.real_price + 1,
                                           moment_buy_price=prev_lot.moment_buy_price,
-                                          name=prev_seller.name,
+                                          name=prev_seller.username,
                                           expired_at=prev_lot.expired_at.strftime('%d.%m.%Y %H:%M'),
                                           status=status_mapping.get(prev_lot.status.value)
                                       ),
