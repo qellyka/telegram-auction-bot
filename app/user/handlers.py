@@ -18,7 +18,7 @@ from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware, UserB
 
 import app.db.requests as rq
 
-from app.filters import IsUser
+from app.filters import IsUser, IsUserCb
 
 import app.user.keyboards as kb
 
@@ -130,7 +130,7 @@ async def create_ref_link_msg(message: Message):
                                                    callback_data="create_ref_link")]
                          ]))
 
-@user_router.callback_query(IsUser(), F.data == "create_ref_link")
+@user_router.callback_query(IsUserCb(), F.data == "create_ref_link")
 async def create_ref_link(cb: CallbackQuery):
     await cb.answer()
     user = await rq.get_user_data(cb.from_user.id)
@@ -183,7 +183,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
         await message.answer(TEXTS["create_lot_3.2_msg"])
 
 
-@user_router.callback_query(IsUser(), F.data == "one_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "one_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours = 1)
     data = await state.get_data()
@@ -200,7 +200,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
     await state.clear()
 
-@user_router.callback_query(IsUser(), F.data == "two_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "two_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours = 2)
     data = await state.get_data()
@@ -218,7 +218,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "four_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "four_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=4)
     data = await state.get_data()
@@ -237,7 +237,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "eight_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "eight_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=8)
     data = await state.get_data()
@@ -256,7 +256,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "ten_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "ten_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=10)
     data = await state.get_data()
@@ -275,7 +275,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "twelve_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "twelve_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=12)
     data = await state.get_data()
@@ -294,7 +294,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "twenty_four_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "twenty_four_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=24)
     data = await state.get_data()
@@ -313,7 +313,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "forty_eight_hour", CreateLot.completion_time)
+@user_router.callback_query(IsUserCb(), F.data == "forty_eight_hour", CreateLot.completion_time)
 async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours=48)
     data = await state.get_data()
@@ -332,7 +332,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@user_router.callback_query(IsUser(), F.data == "deposit_balance")
+@user_router.callback_query(IsUserCb(), F.data == "deposit_balance")
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await state.set_state(DepositBalance.number_stars)
@@ -366,7 +366,7 @@ async def deposit_balance_s(message: Message, state: FSMContext):
         await message.answer(TEXTS["limitations_deposit_balance_msg"])
 
 
-# @user_router.message(IsUser(), DepositBalance.number_stars)
+# @user_router.message(IsUserCb(), DepositBalance.number_stars)
 # async def deposit_balance_s(message: Message, state: FSMContext):
 #     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
 #         await state.update_data(stars=int(message.text))
@@ -406,7 +406,7 @@ async def deposit_balance_s(message: Message, state: FSMContext):
 #                                        text=TEXTS['ref_stars'].format(stars=stars*5/100))
 #     await message.answer(TEXTS["successful_payment"].format(stars=stars))
 
-@user_router.callback_query(IsUser(), F.data == "interrupt_work")
+@user_router.callback_query(IsUserCb(), F.data == "interrupt_work")
 async def interrupt_work(cb: CallbackQuery, state: FSMContext):
     await cb.message.delete()
     await state.clear()
@@ -414,43 +414,43 @@ async def interrupt_work(cb: CallbackQuery, state: FSMContext):
     await asyncio.sleep(5)
     await new_message.delete()
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_1_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_1_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=1, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_5_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_5_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=5, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_10_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_10_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=10, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_25_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_25_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=25, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_50_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_50_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=50, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^bid_100_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^bid_100_\d+$", cb.data))
 async def outbid_bid_1(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
     await bid_lot(lot=lot, bid=100, lot_id=lot_id, cb=cb, user_id=cb.from_user.id)
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^buy_now_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^buy_now_\d+$", cb.data))
 async def buy_now(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     lot = await rq.get_lot_data(lot_id)
@@ -524,7 +524,7 @@ async def buy_now(cb: CallbackQuery):
     )
     await cb.answer()
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^accept_trade_\d+_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^accept_trade_\d+_\d+$", cb.data))
 async def accept_trade(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-2])
     lot = await rq.get_lot_data(lot_id)
@@ -570,7 +570,7 @@ async def my_lots(message: Message):
     else:
         await message.answer("Вы не создали пока ни одного лота.")
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
     await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
@@ -605,7 +605,7 @@ async def next_user_lot(cb: CallbackQuery):
         await cb.answer(TEXTS["reviewed_all_lots_after_this_msg"])
 
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
 async def previous_user_lot(cb: CallbackQuery):
     await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
@@ -666,7 +666,7 @@ async def my_bids(message: Message):
     else:
         await message.answer("Вы не сделали ни одной ставки или вашу ставку перебили.")
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^next_lot_bid_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^next_lot_bid_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
     await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
@@ -698,7 +698,7 @@ async def next_user_lot(cb: CallbackQuery):
         await cb.answer(TEXTS["reviewed_all_lots_after_this_msg"])
 
 
-@user_router.callback_query(IsUser(), lambda cb: re.match(r"^prev_lot_bid_\d+$", cb.data))
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^prev_lot_bid_\d+$", cb.data))
 async def previous_user_lot(cb: CallbackQuery):
     await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
@@ -729,7 +729,7 @@ async def previous_user_lot(cb: CallbackQuery):
     else:
         await cb.answer(TEXTS["reviewed_all_lots_before_this_msg"])
 
-@user_router.callback_query(IsUser(), F.data == "end_moderation")
+@user_router.callback_query(IsUserCb(), F.data == "end_moderation")
 async def end_moderation(cb: CallbackQuery):
     await cb.message.delete()
     msg = await cb.message.answer(TEXTS["end_watching_msg"])
