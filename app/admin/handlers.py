@@ -135,7 +135,7 @@ async def increase_balance(message: Message, state: FSMContext):
     data = await state.get_data()
     user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit():
-        await rq.increase_balance(int(data['id']), message.text)
+        await rq.increase_balance(data['id'], int(message.text))
         await message.edit_text(TEXTS["Баланс успешно увеличен!"])
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота."],
@@ -154,7 +154,7 @@ async def decrease_balance(message: Message, state: FSMContext):
     data = await state.get_data()
     user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit() and message.text <= user.balance:
-        await rq.decrease_balance(int(data['id']), message.text)
+        await rq.decrease_balance(data['id'], int(message.text))
         await message.edit_text(TEXTS["Баланс успешно уменьшен!"])
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота."],
@@ -171,13 +171,14 @@ async def warn_reason(cb: CallbackQuery, state: FSMContext):
     await cb.message.answer(text="Введите причину выдачи предупреждения: ")
     await state.update_data(id=tg_id)
 
-@admin_router.callback_query(IsAdmin(), WarnUser.reason)
+@admin_router.message(IsAdmin(), WarnUser.reason)
 async def warn_user(message: Message, state: FSMContext):
     data = state.get_data()
     await rq.warn_user(utid=int(data['id']), atid=message.from_user.id, reason=message.text)
     await message.answer("Предупреждение успешно выдано!")
     await message.bot.send_message(chat_id=data['id'],
                                    text="Вам было выдано предупреждение. За дополнительной информацией обращайтесь в тех. поддержку.")
+    await state.clear()
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^ban_user_\d+$", cb.data))
 async def ban_user(cb: CallbackQuery):
