@@ -136,7 +136,7 @@ async def increase_balance(message: Message, state: FSMContext):
     user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit():
         await rq.increase_balance(data['id'], int(message.text))
-        await message.edit_text(TEXTS["Баланс успешно увеличен!"])
+        await message.answer("Баланс успешно увеличен!")
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота."],
                                   reply_markup=kb.tech_bot_menu)
@@ -155,7 +155,7 @@ async def decrease_balance(message: Message, state: FSMContext):
     user = await rq.get_user_data(data['id'])
     if message.text and message.text.isdigit() and message.text <= user.balance:
         await rq.decrease_balance(data['id'], int(message.text))
-        await message.edit_text(TEXTS["Баланс успешно уменьшен!"])
+        await message.answer("Баланс успешно уменьшен!")
         await message.bot.send_message(chat_id=data['id'],
                                   text=TEXTS[f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота."],
                                   reply_markup=kb.tech_bot_menu)
