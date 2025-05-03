@@ -336,64 +336,64 @@ async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text=TEXTS["deposit_balance_msg"],
                                reply_markup=kb.interrupt_work)
 
-# @user_router.message(IsUser(), DepositBalance.number_stars)
-# async def deposit_balance_s(message: Message, state: FSMContext):
-#     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
-#         await state.update_data(stars=int(message.text))
-#         data = await state.get_data()
-#         user = await rq.get_user_data(message.from_user.id)
-#         url = await create_payment_link(dep=data['stars'], payment_label=user.id)
-#         await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
-#                              reply_markup=InlineKeyboardMarkup(
-#                                  inline_keyboard=[
-#                                     [InlineKeyboardButton(text="Оплатить",
-#                                                           url=url)],
-#                                     [InlineKeyboardButton(text="Отменить",
-#                                                           callback_data="interrupt_work")]
-#                                  ]))
-#         await state.clear()
-#     else:
-#         await message.answer(TEXTS["limitations_deposit_balance_msg"])
-
 @user_router.message(IsUser(), DepositBalance.number_stars)
 async def deposit_balance_s(message: Message, state: FSMContext):
     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
         await state.update_data(stars=int(message.text))
         data = await state.get_data()
-        await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']))
+        user = await rq.get_user_data(message.from_user.id)
+        url = await create_payment_link(dep=data['stars'], payment_label=user.id)
+        await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
+                             reply_markup=InlineKeyboardMarkup(
+                                 inline_keyboard=[
+                                    [InlineKeyboardButton(text="Оплатить",
+                                                          url=url)],
+                                    [InlineKeyboardButton(text="Отменить",
+                                                          callback_data="interrupt_work")]
+                                 ]))
         await state.clear()
-        await message.bot.send_invoice(
-            chat_id=message.chat.id,
-            title="Пополнение баланса.",
-            description=f"Пополнение баланса профиля на {data['stars']}🌟",
-            provider_token=PAYMENTS_TOKEN,
-            currency="rub",
-            photo_url="https://digital-basket-01.wbbasket.ru/vol6/124/a0516b93ae5e8a32ac14e4fc265b575f/1280.jpg",
-            photo_width=800,
-            photo_height=650,
-            photo_size=800,
-            payload=f"deposit_balance_{data['stars']}",
-            prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*STAR_K*100))],
-            need_email=True,
-            send_email_to_provider=True
-        )
     else:
         await message.answer(TEXTS["limitations_deposit_balance_msg"])
 
-@user_router.pre_checkout_query(lambda query: True)
-async def pre_checkout_query(pcq: PreCheckoutQuery):
-    await pcq.bot.answer_pre_checkout_query(pcq.id, ok=True)
-
-@user_router.message(IsUser(), F.successful_payment)
-async def process_suc_payment(message: Message):
-    user = await rq.get_user_data(message.from_user.id)
-    stars = int(message.successful_payment.invoice_payload.split("_")[-1])
-    await rq.deposit_balance(tg_id=message.from_user.id, stars=stars)
-    if user.ref_id:
-        await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
-        await message.bot.send_message(chat_id=user.ref_id,
-                                       text=TEXTS['ref_stars'].format(stars=stars*5/100))
-    await message.answer(TEXTS["successful_payment"].format(stars=stars))
+# @user_router.message(IsUser(), DepositBalance.number_stars)
+# async def deposit_balance_s(message: Message, state: FSMContext):
+#     if message.text and message.text.isdigit() and int(message.text) >= 50 and int(message.text) <= 10000:
+#         await state.update_data(stars=int(message.text))
+#         data = await state.get_data()
+#         await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']))
+#         await state.clear()
+#         await message.bot.send_invoice(
+#             chat_id=message.chat.id,
+#             title="Пополнение баланса.",
+#             description=f"Пополнение баланса профиля на {data['stars']}🌟",
+#             provider_token=PAYMENTS_TOKEN,
+#             currency="rub",
+#             photo_url="https://digital-basket-01.wbbasket.ru/vol6/124/a0516b93ae5e8a32ac14e4fc265b575f/1280.jpg",
+#             photo_width=800,
+#             photo_height=650,
+#             photo_size=800,
+#             payload=f"deposit_balance_{data['stars']}",
+#             prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*STAR_K*100))],
+#             need_email=True,
+#             send_email_to_provider=True
+#         )
+#     else:
+#         await message.answer(TEXTS["limitations_deposit_balance_msg"])
+#
+# @user_router.pre_checkout_query(lambda query: True)
+# async def pre_checkout_query(pcq: PreCheckoutQuery):
+#     await pcq.bot.answer_pre_checkout_query(pcq.id, ok=True)
+#
+# @user_router.message(IsUser(), F.successful_payment)
+# async def process_suc_payment(message: Message):
+#     user = await rq.get_user_data(message.from_user.id)
+#     stars = int(message.successful_payment.invoice_payload.split("_")[-1])
+#     await rq.deposit_balance(tg_id=message.from_user.id, stars=stars)
+#     if user.ref_id:
+#         await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
+#         await message.bot.send_message(chat_id=user.ref_id,
+#                                        text=TEXTS['ref_stars'].format(stars=stars*5/100))
+#     await message.answer(TEXTS["successful_payment"].format(stars=stars))
 
 @user_router.callback_query(IsUser(), F.data == "interrupt_work")
 async def interrupt_work(cb: CallbackQuery, state: FSMContext):
