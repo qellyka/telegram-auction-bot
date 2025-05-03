@@ -197,7 +197,7 @@ async def warn_reason(cb: CallbackQuery, state: FSMContext):
 
 @admin_router.message(IsAdmin(), WarnUser.reason)
 async def warn_user(message: Message, state: FSMContext):
-    data = state.get_data()
+    data = await state.get_data()
     await rq.warn_user(utid=int(data['id']), atid=message.from_user.id, reason=message.text)
     await message.answer("Предупреждение успешно выдано!")
     await message.bot.send_message(chat_id=data['id'],
