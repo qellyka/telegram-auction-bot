@@ -374,7 +374,7 @@ async def reject_lot(cb: CallbackQuery):
         await msg.delete()
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
-async def reject_lot(cb: CallbackQuery):
+async def next_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
@@ -409,7 +409,7 @@ async def reject_lot(cb: CallbackQuery):
         await cb.answer(TEXTS["reviewed_all_lots_after_this_msg"])
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
-async def reject_lot(cb: CallbackQuery):
+async def previous_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
     prev_lot = await rq.get_previous_lot(lot_id)
     if prev_lot:

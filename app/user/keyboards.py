@@ -8,6 +8,12 @@ main_menu = ReplyKeyboardMarkup(keyboard=[
     resize_keyboard=True,
     input_field_placeholder="Выберите пункт меню")
 
+auction_menu = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text="🔹 Мои лоты"), KeyboardButton(text="🔹 Мои ставки")],
+],
+    resize_keyboard=True,
+    input_field_placeholder="Выберите пункт меню")
+
 user_auction_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📦 Мои лоты", callback_data="my_lots")],
     [InlineKeyboardButton(text="📈 Мои ставки", callback_data="my_bids")],
