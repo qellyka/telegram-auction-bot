@@ -120,7 +120,7 @@ async def root():
 
 @app.get("/favicon.ico")
 async def favicon():
-    return JSONResponse(content={}, status_code=204)  # или можешь вернуть иконку
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":
