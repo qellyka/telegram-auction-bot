@@ -26,7 +26,7 @@ async def send_payment_confirmation(user_id: int, amount: float, message_id: int
     stars = int(amount / STAR_K)
     try:
         user = await rq.get_user_data(user_id)
-        await rq.deposit_balance(tg_id=int(user_id), stars=stars)
+        await rq.deposit_balance(tg_id=user_id, stars=stars)
         if user.ref_id:
             await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
             await bot.edit_message_text(chat_id=user.ref_id,
