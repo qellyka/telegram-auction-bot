@@ -332,7 +332,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
     await cb.answer("")
     await state.set_state(DepositBalance.number_stars)
-    msg = await cb.message.edit_text(text=TEXTS["deposit_balance_msg"],
+    msg = await cb.message.edit_text(text=TEXTS["deposit_balance_msg"].format(star_k=STAR_K),
                                reply_markup=kb.interrupt_work)
     await state.update_data(msg_id=msg.message_id)
 

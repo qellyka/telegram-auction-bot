@@ -17,7 +17,7 @@ user_auction_menu = InlineKeyboardMarkup(inline_keyboard=[
 
 
 profile_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Пополнить баланс.",
+    [InlineKeyboardButton(text="Пополнить баланс",
                           callback_data="deposit_balance")]
 ])
 
