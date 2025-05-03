@@ -10,8 +10,6 @@ from contextlib import asynccontextmanager
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from aiogram.fsm.storage.memory import MemoryStorage
-from pyexpat.errors import messages
-from sqlalchemy import BigInteger
 
 from app.admin.handlers import admin_router
 from app.user.handlers import user_router
