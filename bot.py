@@ -114,6 +114,15 @@ async def yoomoney_webhook(request: Request):
 
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"status": "ok"}
+
+@app.get("/favicon.ico")
+async def favicon():
+    return JSONResponse(content={}, status_code=204)  # или можешь вернуть иконку
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     uvicorn.run("bot:app", host="0.0.0.0", port=8000)
