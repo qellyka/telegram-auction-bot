@@ -1,9 +1,11 @@
 import asyncio
+import logging
 
 from aiogram import F, Router, types
 
 import re
 
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 
@@ -115,7 +117,11 @@ async def manage_users_state(message: Message, state: FSMContext):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^edit_balance_\d+$", cb.data))
 async def edit_balance(cb: CallbackQuery):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logging.warning("callback query too old, cannot answer")
     tg_id = int(cb.data.split("_")[-1])
     await cb.message.edit_text(text="Выберите действие: ",
                                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -127,7 +133,11 @@ async def edit_balance(cb: CallbackQuery):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^increase_bal_\d+$", cb.data))
 async def increase_balance_msg(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logging.warning("callback query too old, cannot answer")
     tg_id = int(cb.data.split("_")[-1])
     await state.set_state(ManageBalanceI.sum)
     await state.update_data(id=tg_id)
@@ -149,7 +159,11 @@ async def increase_balance(message: Message, state: FSMContext):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^decrease_bal_\d+$", cb.data))
 async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logging.warning("callback query too old, cannot answer")
     tg_id = int(cb.data.split("_")[-1])
     await state.set_state(ManageBalanceD.sum)
     await state.update_data(id=tg_id)
@@ -171,7 +185,11 @@ async def decrease_balance(message: Message, state: FSMContext):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^warn_user_\d+$", cb.data))
 async def warn_reason(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logging.warning("callback query too old, cannot answer")
     await state.set_state(WarnUser.reason)
     tg_id = int(cb.data.split("_")[-1])
     await cb.message.answer(text="Введите причину выдачи предупреждения: ")
