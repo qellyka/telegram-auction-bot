@@ -103,7 +103,7 @@ async def manage_users_state(message: Message, state: FSMContext):
                                                            callback_data=f"edit_balance_{user.telegram_id}")],
                                      [InlineKeyboardButton(text="Выдать предупреждение",
                                                            callback_data=f"warn_user_{user.telegram_id}")],
-                                     [InlineKeyboardButton(text="Посмотреть лоты пользователя",
+                                     [InlineKeyboardButton(text="Посмотреть лоты пользователя❌",
                                                            callback_data=f"user_lots_{user.telegram_id}")],
                                      [InlineKeyboardButton(text="Написать пользователю",
                                                            url=f"tg://user?id={user.telegram_id}")],
@@ -200,9 +200,9 @@ async def warn_user(message: Message, state: FSMContext):
     data = await state.get_data()
     await rq.warn_user(utid=data['id'], atid=message.from_user.id, reason=message.text)
     await message.answer("Предупреждение успешно выдано!")
-    await message.bot.send_message(chat_id=data['id'],
-                                   text="Вам было выдано предупреждение. За дополнительной информацией обращайтесь в тех. поддержку.")
     warns = await rq.warn_count(data['id'])
+    await message.bot.send_message(chat_id=data['id'],
+                                   text=f"Вам было выдано предупреждение[{warns}/5]. За дополнительной информацией обращайтесь в тех. поддержку.")
     if warns == 5:
         await message.answer("Пользователь был забанен т.к. у него накопилось 5 предупреждений.")
         await message.bot.send_message(chat_id=data['id'],
