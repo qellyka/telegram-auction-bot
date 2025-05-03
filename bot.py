@@ -17,6 +17,7 @@ from app.auction.functions import background_tasks
 from app.db.engine import setup_db
 
 from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET, STAR_K, TEXTS
+from app.user.handlers import payment_msg
 import app.db.requests as rq
 
 bot = Bot(token=TOKEN)
@@ -31,7 +32,11 @@ async def send_payment_confirmation(user_id: int, amount: float):
             await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
             await bot.send_message(chat_id=user.ref_id,
                                         text=TEXTS['ref_stars'].format(stars=int(stars*5/100)))
+        await bot.edit_message_text(chat_id=user_id,
+                                    message_id=payment_msg.get(user_id),
+                                    text=TEXTS['successful_yoo_pay'])
         await bot.send_message(user_id, TEXTS["successful_payment"].format(stars=stars))
+        del payment_msg[user_id]
 
         logging.info(f"Сообщение отправлено пользователю {user_id}")
     except Exception as e:

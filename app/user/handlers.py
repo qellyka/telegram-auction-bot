@@ -31,9 +31,6 @@ user_router.message.outer_middleware(UserDBCheckMiddleware())
 user_router.message.outer_middleware(UserBanCheckMiddleware())
 user_router.message.outer_middleware(UserBanCheckMiddlewareCB())
 
-
-
-
 class DepositBalance(StatesGroup):
     number_stars = State()
 
@@ -42,6 +39,8 @@ class CreateLot(StatesGroup):
     starter_price = State()
     blitz_price = State()
     completion_time = State()
+
+payment_msg = {}
 
 @user_router.message(IsUser(), CommandStart())
 async def cmd_start(message: Message, command: CommandObject):
@@ -348,23 +347,19 @@ async def deposit_balance_s(message: Message, state: FSMContext):
         data = await state.get_data()
         user = await rq.get_user_data(message.from_user.id)
         url = await create_payment_link(dep=data['stars']*STAR_K, payment_label=user.telegram_id)
-        await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
+        msg = await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
                              reply_markup=InlineKeyboardMarkup(
                                  inline_keyboard=[
                                     [InlineKeyboardButton(text="Оплатить",
-                                                          url=url,
-                                                          callback_data="delete_payment_msg")],
+                                                          url=url)],
                                     [InlineKeyboardButton(text="Отменить",
                                                           callback_data="interrupt_work")]
                                  ]))
         await state.clear()
+        payment_msg[user.telegram_id] = msg.message_id
     else:
         await message.answer(TEXTS["limitations_deposit_balance_msg"])
 
-@user_router.callback_query(IsUser(), F.data == "delete_payment_msg")
-async def interrupt_work(cb: CallbackQuery, state: FSMContext):
-    await cb.message.delete()
-    await state.clear()
 
 # @user_router.message(IsUser(), DepositBalance.number_stars)
 # async def deposit_balance_s(message: Message, state: FSMContext):
