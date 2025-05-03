@@ -138,8 +138,11 @@ async def increase_balance(message: Message, state: FSMContext):
         await rq.increase_balance(data['id'], int(message.text))
         await message.answer("Баланс успешно увеличен!")
         await message.bot.send_message(chat_id=data['id'],
-                                  text=TEXTS[f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота."],
+                                  text=f"Ваш баланс был увеличен на {message.text}🌟 администрацией бота.",
                                   reply_markup=kb.tech_bot_menu)
+        await state.clear()
+    else:
+        await message.answer("Вы должны ввести числовое значение.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^decrease_bal_\d+$", cb.data))
 async def decrease_balance_msg(cb: CallbackQuery, state: FSMContext):
@@ -157,7 +160,7 @@ async def decrease_balance(message: Message, state: FSMContext):
         await rq.decrease_balance(data['id'], int(message.text))
         await message.answer("Баланс успешно уменьшен!")
         await message.bot.send_message(chat_id=data['id'],
-                                  text=TEXTS[f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота."],
+                                  text=f"Ваш баланс был уменьшен на {message.text}🌟 администрацией бота.",
                                   reply_markup=kb.tech_bot_menu)
         await state.clear()
     else:
