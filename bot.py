@@ -10,6 +10,8 @@ from contextlib import asynccontextmanager
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from aiogram.fsm.storage.memory import MemoryStorage
+from pyexpat.errors import messages
+from sqlalchemy import BigInteger
 
 from app.admin.handlers import admin_router
 from app.user.handlers import user_router
@@ -26,7 +28,7 @@ async def send_payment_confirmation(user_id: int, amount: float, message_id: int
     stars = int(amount / STAR_K)
     try:
         user = await rq.get_user_data(user_id)
-        await rq.deposit_balance(tg_id=user_id, stars=stars)
+        await rq.deposit_balance(tg_id=int(user_id), stars=stars)
         if user.ref_id:
             await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
             await bot.edit_message_text(chat_id=user.ref_id,
@@ -103,7 +105,9 @@ async def yoomoney_webhook(request: Request):
 
     amount = float(data["withdraw_amount"])
     logging.info(f"✅ YooMoney payment confirmed: {data}")
-    user_id, message_id = label.split('_')
+    user_id = label.split('_')[0]
+    message_id = label.split('_')[1]
+    print(f"\n\n{user_id}_{message_id}\n\n")
     await send_payment_confirmation(user_id=int(label),
                                     amount=amount,
                                     message_id = int(message_id))
