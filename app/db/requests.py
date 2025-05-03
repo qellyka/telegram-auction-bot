@@ -168,13 +168,19 @@ async def deposit_balance(tg_id: BigInteger, stars: int):
 async def increase_balance(tg_id: BigInteger, bid: int):
     async with async_session() as session:
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tg_id).with_for_update())
-        user.balance += bid
+        if bid <=2000000:
+            user.balance += bid
+        else:
+            print("Value of bid too high")
         await session.commit()
 
 async def decrease_balance(tg_id: BigInteger, bid: int):
     async with async_session() as session:
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tg_id).with_for_update())
-        user.balance -= bid
+        if bid <= 2000000:
+            user.balance -= bid
+        else:
+            print("Value of bid too high")
         await session.commit()
 
 async def ban_user(tid: BigInteger):
