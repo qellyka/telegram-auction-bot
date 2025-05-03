@@ -565,7 +565,8 @@ async def my_lots(message: Message):
                 InlineKeyboardButton(text="⏭️ Следующий лот",
                                       callback_data=f"next_lot_{lot.id}")],
                 [InlineKeyboardButton(text="🔚 Завершить просмотр",
-                                      callback_data="end_moderation")]]))
+                                      callback_data="end_moderation")]]),
+                                   parse_mode='HTML')
     else:
         await message.answer("Вы не создали пока ни одного лота.")
 
@@ -660,7 +661,8 @@ async def my_bids(message: Message):
                 InlineKeyboardButton(text="⏭️ Следующий лот",
                                       callback_data=f"next_lot_bid_{lot.id}")],
                 [InlineKeyboardButton(text="🔚 Завершить просмотр",
-                                      callback_data="end_moderation")]]))
+                                      callback_data="end_moderation")]]),
+                                   parse_mode='HTML')
     else:
         await message.answer("Вы не сделали ни одной ставки или вашу ставку перебили.")
 
