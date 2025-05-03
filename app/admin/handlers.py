@@ -198,10 +198,17 @@ async def warn_reason(cb: CallbackQuery, state: FSMContext):
 @admin_router.message(IsAdmin(), WarnUser.reason)
 async def warn_user(message: Message, state: FSMContext):
     data = await state.get_data()
-    await rq.warn_user(utid=int(data['id']), atid=message.from_user.id, reason=message.text)
+    await rq.warn_user(utid=data['id'], atid=message.from_user.id, reason=message.text)
     await message.answer("Предупреждение успешно выдано!")
     await message.bot.send_message(chat_id=data['id'],
                                    text="Вам было выдано предупреждение. За дополнительной информацией обращайтесь в тех. поддержку.")
+    warns = await rq.warn_count(data['id'])
+    if warns == 5:
+        await message.answer("Пользователь был забанен т.к. у него накопилось 5 предупреждений.")
+        await message.bot.send_message(chat_id=data['id'],
+                                  text=TEXTS["send_ban_msg"],
+                                  reply_markup=kb.tech_bot_menu)
+
     await state.clear()
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^ban_user_\d+$", cb.data))

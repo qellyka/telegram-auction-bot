@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import uuid
 
-from sqlalchemy import select, BigInteger
+from sqlalchemy import select, BigInteger, func
 
 from app.db.engine import async_session
 from app.db.models import (
@@ -175,6 +175,16 @@ async def warn_user(utid: BigInteger, atid: BigInteger, reason: str):
         admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == atid).with_for_update())
         session.add(WarnBase(user_id = user.id, admin_id = admin.id, reason=reason))
         await session.commit()
+
+async def warn_count(tid: BigInteger):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tid).with_for_update())
+        count_result = await session.execute(
+            select(func.count()).select_from(WarnBase).where(WarnBase.user_id == user.id)
+        )
+        warning_count = count_result.scalar_one()
+
+        return warning_count
 
 
 async def get_blocked_users():
