@@ -51,7 +51,7 @@ async def cmd_start(message: Message, command: CommandObject):
     arg = command.args
     print(arg)
     if arg:
-        if len(arg):
+        if len(arg) == 10:
             inviter = await rq.get_user_data_ref(arg)
             user = await rq.get_user_data(message.from_user.id)
             if user.id != inviter.id and user.is_new:
