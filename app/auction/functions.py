@@ -50,7 +50,7 @@ async def process_lot(lot: LotBase, bot: Bot):
                                                 [InlineKeyboardButton(text="Подтвердить отправку",
                                                                       callback_data=f"accept_trade_{lot.id}")],
                                                 [InlineKeyboardButton(text="Открыть спор",
-                                                                      callback_data=f"open_issue_{lot.id}")]
+                                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
                                ]))
         await bot.send_message(chat_id=lot.seller,
                                text=TEXTS["seller_send_gift_msg"].format(
@@ -59,7 +59,7 @@ async def process_lot(lot: LotBase, bot: Bot):
                                ),
                                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                 [InlineKeyboardButton(text="Открыть спор",
-                                                                      callback_data=f"open_issue_{lot.id}")]
+                                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
 ]))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",

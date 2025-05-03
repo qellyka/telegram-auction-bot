@@ -2,8 +2,9 @@ import hashlib
 import logging
 import asyncio
 import uvicorn
+from aiogram.dispatcher.event.bases import CancelHandler
 
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Response
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
@@ -67,6 +68,8 @@ async def telegram_webhook(request: Request):
         update = Update(**data)
         await dp.feed_update(bot, update)
         return JSONResponse(status_code=status.HTTP_200_OK, content={"ok": True})
+    except CancelHandler:
+        return Response(status_code=200)
     except Exception as e:
         logging.exception("Error handling Telegram webhook:")
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})

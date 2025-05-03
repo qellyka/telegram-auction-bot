@@ -495,7 +495,7 @@ async def buy_now(cb: CallbackQuery):
                                                                         username=cb.from_user.username),
                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                   [InlineKeyboardButton(text="Открыть спор",
-                                                        callback_data=f"open_issue_{lot.id}")]
+                                                        url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
                               ]))
 
     await cb.bot.send_message(chat_id=cb.from_user.id,
@@ -507,7 +507,7 @@ async def buy_now(cb: CallbackQuery):
                                                 [InlineKeyboardButton(text="Подтвердить отправку",
                                                                       callback_data=f"accept_trade_{lot.id}_{sell_msg.message_id}")],
                                                 [InlineKeyboardButton(text="Открыть спор",
-                                                                      callback_data=f"open_issue_{lot.id}")]
+                                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
                                ]))
     lot = await rq.get_lot_data(lot_id)
     await cb.bot.edit_message_caption(
