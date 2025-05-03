@@ -6,6 +6,8 @@ import uvicorn
 
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -17,17 +19,14 @@ from app.db.engine import setup_db
 
 from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET
 
-
 WEBHOOK_URL = f"https://lotoro.ru{TELEGRAM_WEBHOOK_PATH}"
-
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-app = FastAPI()
 
-@app.on_event("startup")
-async def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await setup_db()
     dp.include_router(user_router)
     dp.include_router(admin_router)
@@ -35,10 +34,14 @@ async def on_startup():
     await bot.set_webhook(WEBHOOK_URL)
     logging.info("🚀 Bot webhook set and background tasks started.")
 
-@app.on_event("shutdown")
-async def on_shutdown():
+    yield
+
     await bot.delete_webhook()
     logging.info("🛑 Bot webhook removed.")
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 @app.post(TELEGRAM_WEBHOOK_PATH)
 async def telegram_webhook(request: Request):
@@ -50,6 +53,7 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         logging.exception("Error handling Telegram webhook:")
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+
 
 @app.post(YOOMONEY_WEBHOOK_PATH)
 async def yoomoney_webhook(request: Request):
@@ -86,4 +90,4 @@ async def yoomoney_webhook(request: Request):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("bot:app", host="0.0.0.0", port=8000)
