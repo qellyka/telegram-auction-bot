@@ -21,11 +21,9 @@ from app.filters import IsUser
 
 import app.user.keyboards as kb
 
-from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS, SECRET_KEY
+from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS
 
 from app.user.handler_functions import bid_lot, create_payment_link
-
-from itsdangerous import URLSafeSerializer, BadSignature
 
 user_router = Router()
 
@@ -55,8 +53,7 @@ async def cmd_start(message: Message, command: CommandObject):
             user = await rq.get_user_data(message.from_user.id)
             if user.id != inviter.id and user.is_new:
                 await rq.set_user_referral(referral_id=inviter.telegram_id , tid=message.from_user.id)
-                await message.answer(f"🎉 Вы зарегистрированы по реферальной ссылке от @{inviter.username}!\n"
-                                     f"С каждого вашего пополнения он будет получать 10% в благодарность.")
+                await message.answer(TEXTS['link_reg'].format(inviter=inviter.username))
             return
 
         else:
@@ -123,18 +120,10 @@ async def create_lot(message: Message, state: FSMContext):
 
 @user_router.message(IsUser(), F.text == "👨‍👩‍👧‍👦Реферальная программа")
 async def create_ref_link_msg(message: Message):
-    await message.answer(text="""<b>🎁 Реферальная программа Lotoro</b>. Приглашай друзей и зарабатывай! 💸
-    
-🔗 Ты будешь получать <b>10%</b> от каждого пополнения, которое сделает приглашённый тобой пользователь.
-
-📲 Поделись своей уникальной ссылкой — как только человек запустит бота по ней, он будет закреплён за тобой навсегда.
-
-💰 Бонусы начисляются <b>автоматически</b> на твой баланс после каждого пополнения!
-
-<b>Готов начать?</b> Нажми кнопку ниже, чтобы создать свою реферальную ссылку 👇""",
+    await message.answer(text=TEXTS['ref_msg_prev'],
                          parse_mode="HTML",
                          reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                             [InlineKeyboardButton(text="📎 Создать ссылку",
+                             [InlineKeyboardButton(text=TEXTS['create_ref_link'],
                                                    callback_data="create_ref_link")]
                          ]))
 
@@ -145,26 +134,22 @@ async def create_ref_link(cb: CallbackQuery):
 
     existing_referral = await rq.get_user_referral(user.id)
     if existing_referral:
-        await cb.message.answer(text="""❗️ У вас уже есть реферальная ссылка.
-            
-Если вы хотите изменить её, пожалуйста, обратитесь к поддержке.""")
+        await cb.message.answer(text=TEXTS['u_have_ref_link'])
+        return
+
+    if user.ref_id:
+        await cb.message.answer(text=TEXTS['u_are_referral'])
         return
 
     link =  ''.join(random.choices(string.ascii_uppercase, k=10))
 
-    await cb.message.answer(text="""<b>🎉 Ваша реферальная ссылка готова!</b>
-Мы отправим её вам в виде кнопки ниже. Просто перешли эту кнопку друзьям, в чаты или каналы. 
-Каждый, кто запустит бота по этой ссылке, станет вашим рефералом, и вы начнёте зарабатывать! 💸""",
+    await cb.message.answer(text=TEXTS['your_ref_link'],
                             parse_mode='HTML',)
     await rq.add_new_referral_link(link, cb.from_user.id)
-    await cb.message.answer(text="""🎉 Зарабатывай вместе с Lotoro!
-
-Аукционный бот, где можно продавать и покупать уникальные вещи, участвовать в торгах и ловить крутые лоты.
-
-👇 Жми и заходи:""",
+    await cb.message.answer(text=TEXTS['earn_with_lotoro'],
                             parse_mode='HTML',
                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                [InlineKeyboardButton(text="🚀 Присоединиться к Lotoro",
+                                [InlineKeyboardButton(text=TEXTS['join_to_lotoro'],
                                                       url=f"https://t.me/{BOT_ID}?start={link}")]
                             ]))
 
@@ -401,8 +386,13 @@ async def pre_checkout_query(pcq: PreCheckoutQuery):
 
 @user_router.message(IsUser(), F.successful_payment)
 async def process_suc_payment(message: Message):
+    user = await rq.get_user_data(message.from_user.id)
     stars = int(message.successful_payment.invoice_payload.split("_")[-1])
     await rq.deposit_balance(tg_id=message.from_user.id, stars=stars)
+    if user.ref_id:
+        await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
+        await message.bot.send_message(chat_id=user.ref_id,
+                                       text=TEXTS['ref_stars'].format(stars=stars*5/100))
     await message.answer(TEXTS["successful_payment"].format(stars=stars))
 
 @user_router.callback_query(IsUser(), F.data == "interrupt_work")
