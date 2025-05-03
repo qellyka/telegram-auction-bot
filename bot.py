@@ -16,15 +16,23 @@ from app.user.handlers import user_router
 from app.auction.functions import background_tasks
 from app.db.engine import setup_db
 
-from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET, STAR_K
+from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET, STAR_K, TEXTS
+import app.db.requests as rq
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
 async def send_payment_confirmation(user_id: str, amount: float):
-    message = f"Вы перевели {amount} рублей на наш счет. Спасибо за ваш перевод!"
+    stars = int(amount / STAR_K)
     try:
-        await bot.send_message(user_id, message)
+        user = await rq.get_user_data(user_id)
+        await rq.deposit_balance(tg_id=user_id, stars=stars)
+        if user.ref_id:
+            await rq.deposit_balance(tg_id=user.ref_id, stars=int(stars*5/100))
+            await bot.send_message(chat_id=user.ref_id,
+                                           text=TEXTS['ref_stars'].format(stars=int(stars*5/100)))
+        await bot.send_message(user_id, TEXTS["successful_payment"].format(stars=stars))
+
         logging.info(f"Сообщение отправлено пользователю {user_id}")
     except Exception as e:
         logging.error(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
