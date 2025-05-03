@@ -544,27 +544,30 @@ async def profile(message: Message):
 @user_router.message(IsUser(), F.text == "🔹 Мои лоты")
 async def my_lots(message: Message):
     lot = await rq.get_first_user_lot(message.from_user.id)
-    if lot.applicant:
-        user = await rq.get_user_data(lot.applicant)
+    if lot:
+        if lot.applicant:
+            user = await rq.get_user_data(lot.applicant)
+        else:
+            user = UserPop()
+            user.name = "Нет"
+        await message.answer_photo(photo=lot.photo_id,
+                                   caption=TEXTS['user_lot_caption'].format(id=lot.id,
+                                                                            starter_price=lot.starter_price,
+                                                                            real_price=lot.real_price,
+                                                                            min_next_price=lot.real_price+1,
+                                                                            moment_buy_price=lot.moment_buy_price,
+                                                                            name=user.name,
+                                                                            expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M'),
+                                                                            status=status_mapping.get(lot.status.value)),
+                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="⏮️ Предыдущий лот",
+                                      callback_data=f"prev_lot_{lot.id}"),
+                InlineKeyboardButton(text="⏭️ Следующий лот",
+                                      callback_data=f"next_lot_{lot.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить просмотр",
+                                      callback_data="end_moderation")]]))
     else:
-        user = UserPop()
-        user.name = "Нет"
-    await message.answer_photo(photo=lot.photo_id,
-                               caption=TEXTS['user_lot_caption'].format(id=lot.id,
-                                                                        starter_price=lot.starter_price,
-                                                                        real_price=lot.real_price,
-                                                                        min_next_price=lot.real_price+1,
-                                                                        moment_buy_price=lot.moment_buy_price,
-                                                                        name=user.name,
-                                                                        expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M'),
-                                                                        status=status_mapping.get(lot.status.value)),
-                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="⏮️ Предыдущий лот",
-                                  callback_data=f"prev_lot_{lot.id}"),
-            InlineKeyboardButton(text="⏭️ Следующий лот",
-                                  callback_data=f"next_lot_{lot.id}")],
-            [InlineKeyboardButton(text="🔚 Завершить просмотр",
-                                  callback_data="end_moderation")]]))
+        await message.answer("Вы не создали пока ни одного лота.")
 
 @user_router.callback_query(IsUser(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
@@ -640,23 +643,26 @@ async def previous_user_lot(cb: CallbackQuery):
 @user_router.message(IsUser(), F.text == "🔹 Мои ставки")
 async def my_bids(message: Message):
     lot = await rq.get_first_user_lot_bid(message.from_user.id)
-    seller = await rq.get_user_data(lot.seller)
-    await message.answer_photo(photo=lot.photo_id,
-                               caption=TEXTS['user_lot_caption_bid'].format(id=lot.id,
-                                                                        starter_price=lot.starter_price,
-                                                                        real_price=lot.real_price,
-                                                                        min_next_price=lot.real_price+1,
-                                                                        moment_buy_price=lot.moment_buy_price,
-                                                                        name=seller.name,
-                                                                        expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M'),
-                                                                        status=status_mapping.get(lot.status.value)),
-                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="⏮️ Предыдущий лот",
-                                  callback_data=f"prev_lot_bid_{lot.id}"),
-            InlineKeyboardButton(text="⏭️ Следующий лот",
-                                  callback_data=f"next_lot_bid_{lot.id}")],
-            [InlineKeyboardButton(text="🔚 Завершить просмотр",
-                                  callback_data="end_moderation")]]))
+    if lot:
+        seller = await rq.get_user_data(lot.seller)
+        await message.answer_photo(photo=lot.photo_id,
+                                   caption=TEXTS['user_lot_caption_bid'].format(id=lot.id,
+                                                                            starter_price=lot.starter_price,
+                                                                            real_price=lot.real_price,
+                                                                            min_next_price=lot.real_price+1,
+                                                                            moment_buy_price=lot.moment_buy_price,
+                                                                            name=seller.name,
+                                                                            expired_at=lot.expired_at.strftime('%d.%m.%Y %H:%M'),
+                                                                            status=status_mapping.get(lot.status.value)),
+                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="⏮️ Предыдущий лот",
+                                      callback_data=f"prev_lot_bid_{lot.id}"),
+                InlineKeyboardButton(text="⏭️ Следующий лот",
+                                      callback_data=f"next_lot_bid_{lot.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить просмотр",
+                                      callback_data="end_moderation")]]))
+    else:
+        await message.answer("Вы не сделали ни одной ставки или вашу ставку перебили.")
 
 @user_router.callback_query(IsUser(), lambda cb: re.match(r"^next_lot_bid_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
