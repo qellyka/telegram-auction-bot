@@ -347,7 +347,8 @@ async def deposit_balance_s(message: Message, state: FSMContext):
         data = await state.get_data()
         user = await rq.get_user_data(message.from_user.id)
         url = await create_payment_link(dep=data['stars']*STAR_K, payment_label=user.telegram_id)
-        msg = await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars']),
+        msg = await message.answer(TEXTS["send_deposit_balance_msg"].format(stars=data['stars'],
+                                                                            rub=data['stars']*STAR_K),
                              reply_markup=InlineKeyboardMarkup(
                                  inline_keyboard=[
                                     [InlineKeyboardButton(text="Оплатить",
