@@ -21,7 +21,7 @@ from app.filters import IsUser
 
 import app.user.keyboards as kb
 
-from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS
+from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS, STAR_K
 
 from app.user.handler_functions import bid_lot, create_payment_link
 
@@ -373,7 +373,7 @@ async def deposit_balance_s(message: Message, state: FSMContext):
             photo_height=650,
             photo_size=800,
             payload=f"deposit_balance_{data['stars']}",
-            prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*1.6*100))],
+            prices=[types.LabeledPrice(label=f"Покупка {data['stars']}🌟", amount=int(data['stars']*STAR_K*100))],
             need_email=True,
             send_email_to_provider=True
         )

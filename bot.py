@@ -1,4 +1,3 @@
-import os
 import hashlib
 import logging
 import asyncio
@@ -17,13 +16,18 @@ from app.user.handlers import user_router
 from app.auction.functions import background_tasks
 from app.db.engine import setup_db
 
-from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET
-
-WEBHOOK_URL = f"https://lotoro.ru{TELEGRAM_WEBHOOK_PATH}"
+from config import TOKEN, TELEGRAM_WEBHOOK_PATH, YOOMONEY_WEBHOOK_PATH, YOO_SECRET, STAR_K
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
+async def send_payment_confirmation(user_id: str, amount: float):
+    message = f"Вы перевели {amount} рублей на наш счет. Спасибо за ваш перевод!"
+    try:
+        await bot.send_message(user_id, message)
+        logging.info(f"Сообщение отправлено пользователю {user_id}")
+    except Exception as e:
+        logging.error(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,7 +35,7 @@ async def lifespan(app: FastAPI):
     dp.include_router(user_router)
     dp.include_router(admin_router)
     asyncio.create_task(background_tasks(bot))
-    await bot.set_webhook(WEBHOOK_URL)
+    await bot.set_webhook("https://lotoro.ru/webhooks/telegram")
     logging.info("🚀 Bot webhook set and background tasks started.")
 
     yield
@@ -68,6 +72,9 @@ async def yoomoney_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     label = data.get("label", "")
+    if not label:
+        raise HTTPException(status_code=400, detail="Missing label")
+
     signature_string = "&".join([
         data["notification_type"],
         data["operation_id"],
@@ -85,7 +92,12 @@ async def yoomoney_webhook(request: Request):
         logging.warning(f"Invalid SHA1: expected {calculated_hash}, got {data['sha1_hash']}")
         raise HTTPException(status_code=403, detail="Invalid signature")
 
+    amount = float(data["amount"])
     logging.info(f"✅ YooMoney payment confirmed: {data}")
+
+    await send_payment_confirmation(user_id=int(label),
+                                    amount=amount/STAR_K)
+
     return {"status": "ok"}
 
 if __name__ == "__main__":
