@@ -21,4 +21,4 @@ class IsUser(BaseFilter):
 class IsUserCb(BaseFilter):
     async def __call__(self, cb: CallbackQuery) -> bool:
         user = await rq.get_user_data(cb.from_user.id)
-        return not (user.is_admin)
+        return not(user.is_admin)
