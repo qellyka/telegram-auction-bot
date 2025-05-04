@@ -90,15 +90,15 @@ async def get_previous_user_lot(current_lot_id, tid: BigInteger):
 
 async def get_first_user_lot_bid(tid: BigInteger):
     async with async_session() as session:
-        return await session.scalar(select(LotBase).where(LotBase.applicant == tid).order_by(LotBase.id.asc()).limit(1))
+        return await session.scalar(select(LotBase).where(LotBase.applicant == tid, LotBase.status == LotStatus.TRADING).order_by(LotBase.id.asc()).limit(1))
 
 async def get_next_user_lot_bid(current_lot_id, tid: BigInteger):
     async with async_session() as session:
-        return await session.scalar(select(LotBase).where(LotBase.applicant == tid, LotBase.id > current_lot_id).order_by(LotBase.id.asc()).limit(1))
+        return await session.scalar(select(LotBase).where(LotBase.applicant == tid, LotBase.id > current_lot_id, LotBase.status == LotStatus.TRADING).order_by(LotBase.id.asc()).limit(1))
 
 async def get_previous_user_lot_bid(current_lot_id, tid: BigInteger):
     async with async_session() as session:
-        return await session.scalar(select(LotBase).where(LotBase.applicant == tid, LotBase.id < current_lot_id).order_by(LotBase.id.desc()).limit(1))
+        return await session.scalar(select(LotBase).where(LotBase.applicant == tid, LotBase.id < current_lot_id, LotBase.status == LotStatus.TRADING).order_by(LotBase.id.desc()).limit(1))
 
 async def set_lot_applicant(lot_id: int, applicant: int):
     async with async_session() as session:
