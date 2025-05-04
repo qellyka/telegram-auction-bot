@@ -96,9 +96,10 @@ async def process_lot(lot: LotBase, bot: Bot):
 
 async def background_tasks(bot: Bot):
     while True:
+        now = datetime.datetime.now(ZoneInfo("Europe/Moscow"))
+        seconds_to_next_minute = 60 - now.second - now.microsecond / 1_000_000
+        await asyncio.sleep(seconds_to_next_minute)  # Ждём до начала следующей минуты
         await check_expired_lots(bot)
-        await asyncio.sleep(60)
-
 
 async def mark_payment_as_paid(bot: Bot, label: str, amount: float):
     try:
