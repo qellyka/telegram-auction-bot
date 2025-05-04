@@ -215,6 +215,16 @@ async def warn_count(tid: BigInteger):
 
         return warning_count
 
+async def notify_admins(message: str, bot):
+    async with async_session() as session:
+        admins = await session.scalars(
+            select(UserBase).where(UserBase.is_admin == True)
+        )
+        for admin in admins:
+            try:
+                await bot.send_message(admin.telegram_id, message)
+            except Exception as e:
+                print(f"Не удалось отправить сообщение {admin.telegram_id}: {e}")
 
 async def get_blocked_users():
     async with async_session() as session:

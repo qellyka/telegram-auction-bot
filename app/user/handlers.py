@@ -201,6 +201,7 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
     await cb.message.answer(TEXTS['blank_send_to_administrators'])
+    await rq.notify_admins(message=TEXTS['new_withdrawal_notification'], bot=cb.bot)
     await state.clear()
 
 @user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
@@ -269,7 +270,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
         await state.set_state(CreateLot.blitz_price)
         await message.answer(TEXTS["create_lot_3_msg"])
     else:
-        await message.answer(TEXTS["create_lot_3.3_msg"])
+        await message.answer(TEXTS["create_lot_3.1_msg"])
 
 @user_router.message(IsUser(), CreateLot.blitz_price)
 async def set_lots_photo(message: Message, state: FSMContext):

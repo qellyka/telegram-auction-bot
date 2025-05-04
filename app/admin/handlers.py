@@ -265,6 +265,10 @@ async def new_lots_menu(message: Message):
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_lot_\d+$", cb.data))
 async def approve_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
+    try:
+        await cb.answer("Лот #" + str(lot_id) + " одобрен.")
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await rq.approve_lot(lot_id=lot_id)
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
@@ -287,7 +291,6 @@ async def approve_lot(cb: CallbackQuery):
                                                                 url=f"https://t.me/{BOT_ID}?start={lot.uuid}")]
                                       ])
                             )
-    await cb.answer("Лот #" + str(lot_id) + " одобрен.")
     await cb.bot.send_message(chat_id=user.telegram_id,
                                         text=TEXTS["send_approve_lot_notif"].format(
                                             CHANNEL_ID=CHANNEL_ID,
@@ -332,10 +335,13 @@ async def approve_lot(cb: CallbackQuery):
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_lot_\d+$", cb.data))
 async def reject_lot(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-1])
+    try:
+        await cb.answer("Лот №" + str(lot_id) + " отклонен.")
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     lot = await rq.get_lot_data(lot_id=lot_id)
     user = await rq.get_user_data_id(lot.user_id)
     await rq.reject_lot(lot_id=lot_id)
-    await cb.answer("Лот №" + str(lot_id) + " отклонен.")
     await cb.bot.send_message(chat_id=user.telegram_id,
                               text=TEXTS["send_reject_lot_notif"].format(
                                   id=lot.id
@@ -378,6 +384,10 @@ async def reject_lot(cb: CallbackQuery):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
 async def next_lot(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     lot_id = int(cb.data.split("_")[-1])
     next_lot = await rq.get_next_lot(lot_id)
     if next_lot:
@@ -413,6 +423,10 @@ async def next_lot(cb: CallbackQuery):
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
 async def previous_lot(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     lot_id = int(cb.data.split("_")[-1])
     prev_lot = await rq.get_previous_lot(lot_id)
     if prev_lot:
@@ -471,7 +485,7 @@ async def new_lots_menu(message: Message):
                                         InlineKeyboardButton(text="⏭️ Следующая заявка",
                                                              callback_data=f"next_blank_{blank.id}")],
                                        [InlineKeyboardButton(text="🔚 Завершить модерирование",
-                                                             callback_data="end_moderation")]]),
+                                                             callback_data="end_blank_moderation")]]),
                                    parse_mode="HTML")
     else:
         await message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
@@ -518,20 +532,22 @@ async def get_receipt_id(message: Message, state: FSMContext):
                  InlineKeyboardButton(text="⏭️ Следующая заявка",
                                       callback_data=f"next_blank_{next_blank.id}")],
                 [InlineKeyboardButton(text="🔚 Завершить модерирование",
-                                      callback_data="end_moderation")]]),
+                                      callback_data="end_blank_moderation")]]),
             parse_mode="HTML")
 
-@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_blank_\d+$", cb.data))
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_blank_\d+$", cb.data))
 async def get_receipt_id(cb: CallbackQuery):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     blank_id = int(cb.data.split("_")[-1])
     await rq.reject_blank(admin_id=cb.from_user.id, blank_id=blank_id)
     blank = await rq.get_blank_data(blank_id)
     user = await rq.get_user_data_id(blank.user_id)
     await cb.answer('❌ Заявка успешно отклонена!')
-    await cb.bot.send_photo(chat_id=user.telegram_id,
-                                 photo=blank.receipt_id,
-                                 caption="Ваша заявка была рассмотрена и отклонена, за подробностями обращайтесь в тех. поддержку.")
+    await cb.bot.send_message(chat_id=user.telegram_id,
+                              text="Ваша заявка была рассмотрена и отклонена, за подробностями обращайтесь в тех. поддержку.")
 
     next_blank = await rq.get_next_blank(blank_id)
     if next_blank:
@@ -555,7 +571,71 @@ async def get_receipt_id(cb: CallbackQuery):
                  InlineKeyboardButton(text="⏭️ Следующая заявка",
                                       callback_data=f"next_blank_{next_blank.id}")],
                 [InlineKeyboardButton(text="🔚 Завершить модерирование",
-                                      callback_data="end_moderation")]]),
+                                      callback_data="end_blank_moderation")]]),
+            parse_mode="HTML")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_blank_\d+$", cb.data))
+async def get_receipt_id(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    blank_id = int(cb.data.split("_")[-1])
+    next_blank = await rq.get_next_blank(blank_id)
+    if next_blank:
+        next_user = await rq.get_user_data_id(next_blank.user_id)
+        await cb.message.edit_text(text=TEXTS["withdraw_request_admin"].format(
+            id=next_blank.id,
+            user_id=next_user.username,
+            bank=blank_bank_mapping.get(next_blank.bank.value),
+            account_number=next_blank.account_number,
+            star_amount=next_blank.star_amount,
+            created_at=next_blank.created_at,
+            processed_block=blank_status_mapping.get(next_blank.status.value)
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Одобрить",
+                                      callback_data=f"approve_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="❌ Отклонить",
+                                      callback_data=f"reject_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущая заявка",
+                                      callback_data=f"prev_blank_{next_blank.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующая заявка",
+                                      callback_data=f"next_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_blank_moderation")]]),
+            parse_mode="HTML")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_blank_\d+$", cb.data))
+async def get_receipt_id(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    blank_id = int(cb.data.split("_")[-1])
+    prev_blank = await rq.get_previous_blank(blank_id)
+    if prev_blank:
+        prev_user = await rq.get_user_data_id(prev_blank.user_id)
+        await cb.message.edit_text(text=TEXTS["withdraw_request_admin"].format(
+            id=prev_user.id,
+            user_id=prev_user.username,
+            bank=blank_bank_mapping.get(prev_blank.bank.value),
+            account_number=prev_blank.account_number,
+            star_amount=prev_blank.star_amount,
+            created_at=prev_blank.created_at,
+            processed_block=blank_status_mapping.get(prev_blank.status.value)
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Одобрить",
+                                      callback_data=f"approve_blank_{prev_blank.id}")],
+                [InlineKeyboardButton(text="❌ Отклонить",
+                                      callback_data=f"reject_blank_{prev_blank.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущая заявка",
+                                      callback_data=f"prev_blank_{prev_blank.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующая заявка",
+                                      callback_data=f"next_blank_{prev_blank.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_blank_moderation")]]),
             parse_mode="HTML")
 
 
@@ -563,6 +643,13 @@ async def get_receipt_id(cb: CallbackQuery):
 async def end_moderation(cb: CallbackQuery):
     await cb.message.delete()
     msg = await cb.message.answer(TEXTS["end_moderation_msg"])
+    await asyncio.sleep(5)
+    await msg.delete()
+
+@admin_router.callback_query(IsAdminCb(), F.data == "end_blank_moderation")
+async def end_moderation(cb: CallbackQuery):
+    await cb.message.delete()
+    msg = await cb.message.answer(TEXTS["end_moderation_blank_msg"])
     await asyncio.sleep(5)
     await msg.delete()
 
