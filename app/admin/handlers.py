@@ -534,6 +534,8 @@ async def get_receipt_id(message: Message, state: FSMContext):
                 [InlineKeyboardButton(text="🔚 Завершить модерирование",
                                       callback_data="end_blank_moderation")]]),
             parse_mode="HTML")
+    else:
+        await message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_blank_\d+$", cb.data))
 async def get_receipt_id(cb: CallbackQuery):
@@ -573,6 +575,8 @@ async def get_receipt_id(cb: CallbackQuery):
                 [InlineKeyboardButton(text="🔚 Завершить модерирование",
                                       callback_data="end_blank_moderation")]]),
             parse_mode="HTML")
+    else:
+        await cb.message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_blank_\d+$", cb.data))
 async def get_receipt_id(cb: CallbackQuery):

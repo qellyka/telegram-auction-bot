@@ -27,10 +27,10 @@ class BlankModStatus(enum.Enum):
     PENDING = "PENDING"
 
 class BankEnum(enum.Enum):
-    TINKOFF = "Tinkoff"
-    SBER = "Sberbank"
-    ALFA = "AlfaBank"
-    STAR = "Star"
+    TINKOFF = "TINKOFF"
+    SBER = "SBER"
+    ALFA = "ALFA"
+    STAR = "STAR"
 
 # ----------------- USERS -----------------
 

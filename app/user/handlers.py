@@ -136,7 +136,7 @@ async def withdraw_stars_bank(message: Message, state: FSMContext):
     user = await rq.get_user_data(message.from_user.id)
     if user.balance < 50:
         await message.answer(TEXTS["withdraw_from_50_stars"])
-    elif message.text and message.text.isdigit() and int(message.text) <= user.balance and int(message.text) > 0:
+    elif message.text and message.text.isdigit() and int(message.text) <= user.balance and int(message.text) >= 50:
         await state.update_data(value=int(message.text))
         await message.answer(TEXTS['choose_bank_msg'],
                              reply_markup=kb.banks_menu)
