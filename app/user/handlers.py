@@ -128,7 +128,7 @@ async def withdraw_stars_value(cb: CallbackQuery, state: FSMContext):
         await cb.answer()
     except Exception as e:
         logging.warning(f"Не удалось ответить на callback: {e}")
-    await cb.message.answer(TEXTS['write_value_of_stars_msg'])
+    await cb.message.edit_text(TEXTS['write_value_of_stars_msg'])
     await state.set_state(WithdrawStars.value)
 
 @user_router.message(IsUser(), WithdrawStars.value)
@@ -151,7 +151,7 @@ async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.warning(f"Не удалось ответить на callback: {e}")
     await state.update_data(bank="tinkoff")
-    await cb.message.answer(TEXTS['write_your_account_number'])
+    await cb.message.edit_text(TEXTS['write_your_account_number'])
     await state.set_state(WithdrawStars.number)
 
 @user_router.callback_query(IsUserCb(), F.data == "sberbank", WithdrawStars.bank)
@@ -200,11 +200,11 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
-    await cb.message.answer(TEXTS['blank_send_to_administrators'])
+    await cb.message.edit_text(TEXTS['blank_send_to_administrators'])
     await rq.notify_admins(message=TEXTS['new_withdrawal_notification'], bot=cb.bot)
     await state.clear()
 
-@user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
+@user_router.callback_query(IsUserCb(), F.data == "cancel_withdraw_blank")
 async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     try:
         await cb.answer()
