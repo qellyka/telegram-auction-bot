@@ -12,6 +12,7 @@ from aiogram.types import Message, CallbackQuery, PreCheckoutQuery, InlineKeyboa
 
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from sqlalchemy.util import await_only
 
 from app.db.models import LotStatus
 from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware, UserBanCheckMiddlewareCB
@@ -40,6 +41,11 @@ class CreateLot(StatesGroup):
     starter_price = State()
     blitz_price = State()
     completion_time = State()
+
+class WithdrawStars(StatesGroup):
+    value = State()
+    bank = State()
+    number = State()
 
 class UserPop():
     name: str
@@ -114,6 +120,76 @@ async def create_lot(message: Message):
 async def create_lot(message: Message):
     await message.answer(text=TEXTS["withdraw_stars_msg"],
                          reply_markup=kb.withdraw_bot_menu)
+
+@user_router.callback_query(IsUserCb(), F.data == "withdraw_stars")
+async def withdraw_stars_value(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await cb.message.answer(TEXTS['write_value_of_stars_msg'])
+    await state.set_state(WithdrawStars.value)
+
+@user_router.message(IsUser(), WithdrawStars.value)
+async def withdraw_stars_bank(message: Message, state: FSMContext):
+    user = await rq.get_user_data(message.from_user.id)
+    if message.text and message.text.isdigit() and int(message.text) <= user.balance and int(message.text) > 0:
+        await state.update_data(value=int(message.text))
+        await message.answer(TEXTS['choose_bank_msg'],
+                             reply_markup=kb.banks_menu)
+        await state.set_state(WithdrawStars.bank)
+    else:
+        await message.answer(TEXTS['write_correct_value_of_stars'])
+
+@user_router.callback_query(IsUserCb(), F.data == "tinkoff", WithdrawStars.bank)
+async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.update_data(bank="tinkoff")
+    await cb.message.answer(TEXTS['write_your_account_number'])
+    await state.set_state(WithdrawStars.number)
+
+@user_router.callback_query(IsUserCb(), F.data == "sberbank", WithdrawStars.bank)
+async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.update_data(bank="sberbank")
+    await cb.message.answer(TEXTS['write_your_account_number'])
+    await state.set_state(WithdrawStars.number)
+
+@user_router.callback_query(IsUserCb(), F.data == "alfabank", WithdrawStars.bank)
+async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.update_data(bank="alfabank")
+    await cb.message.answer(TEXTS['write_your_account_number'])
+    await state.set_state(WithdrawStars.number)
+
+@user_router.callback_query(IsUserCb(), F.data == "stars", WithdrawStars.bank)
+async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.update_data(bank="stars")
+    await state.update_data(number=cb.from_user.username)
+    await cb.message.answer('Подтвердите отправку заявки.',
+                         reply_markup=kb.withdraw_menu)
+
+@user_router.message(IsUser(), WithdrawStars.number)
+async def withdraw_stars_end(message: Message, state: FSMContext):
+    await state.update_data(number=message.text)
+    await message.answer('Подтвердите отправку заявки.',
+                         reply_markup=kb.withdraw_menu)
+
+@user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
+async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    data = await state.get_data()
+    await rq.decrease_balance(cb.from_user.id, data['value'])
+    await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
+    await cb.message.answer('Ваша заявка была отправлена администрации. ДОБАВИТЬ СКОЛЬКО НУЖНО ЖДАТЬ')
+    await state.clear()
+
+@user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
+async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    msg = await cb.message.answer('Заявка была отменена.')
+    await asyncio.sleep(5)
+    await msg.delete()
+    await state.clear()
+
 
 @user_router.message(IsUser(), F.text == "🎫Создать лот")
 async def create_lot(message: Message, state: FSMContext):

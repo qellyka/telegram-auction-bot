@@ -11,7 +11,9 @@ from app.db.models import (
     LotStatus,
     LotModStatus,
     ReferralBase,
-    WarnBase
+    WarnBase,
+    WithdrawalRequest,
+    BankEnum
 )
 
 # ----------------- LOT FUNCTIONS -----------------
@@ -236,3 +238,34 @@ async def get_user_referral(user_id: int):
     async with async_session() as session:
         referral = await session.scalar(select(ReferralBase).where(ReferralBase.user_id == user_id))
         return referral
+
+# ----------------- WITHDRAWAL BLANKS -----------------
+
+async def add_new_blank(tid: BigInteger ,stars: int, bank: str, number: str):
+    async with async_session() as session:
+        user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tid).with_for_update())
+        if bank == "tinkoff":
+            session.add(WithdrawalRequest(user_id=user.id,
+                                          bank=BankEnum.TINKOFF,
+                                          account_number=number,
+                                          star_amount=stars,
+                                          created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
+        elif bank == "sberbank":
+            session.add(WithdrawalRequest(user_id=user.id,
+                                          bank=BankEnum.SBER,
+                                          account_number=number,
+                                          star_amount=stars,
+                                          created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
+        elif bank == "alfabank":
+            session.add(WithdrawalRequest(user_id=user.id,
+                                          bank=BankEnum.ALFA,
+                                          account_number=number,
+                                          star_amount=stars,
+                                          created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
+        elif bank == "stars":
+            session.add(WithdrawalRequest(user_id=user.id,
+                                          bank=BankEnum.STAR,
+                                          account_number=number,
+                                          star_amount=stars,
+                                          created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
+        await session.commit()

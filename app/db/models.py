@@ -21,6 +21,12 @@ class LotModStatus(enum.Enum):
     REJECTED = "REJECTED"
     PENDING = "PENDING"
 
+class BankEnum(enum.Enum):
+    TINKOFF = "Tinkoff"
+    SBER = "Sberbank"
+    ALFA = "AlfaBank"
+    Star = "Star"
+
 # ----------------- USERS -----------------
 
 class UserBase(Base):
@@ -78,3 +84,19 @@ class LotBase(Base):
     seller: Mapped[int] = mapped_column(BigInteger)
     is_post: Mapped[LotModStatus]
     status: Mapped[LotStatus]
+
+# ----------------- WITHDRAWAL -----------------
+
+class WithdrawalRequest(Base):
+    __tablename__ = "withdrawal_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    admin_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
+    bank: Mapped[BankEnum]
+    account_number: Mapped[str]
+    star_amount: Mapped[int]
+    receipt_id: Mapped[Optional[str]]
+    created_at: Mapped[datetime.datetime]
+    processed_at: Mapped[Optional[str]]
+

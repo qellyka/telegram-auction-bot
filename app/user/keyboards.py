@@ -3,7 +3,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🎫Создать лот"), KeyboardButton(text="📊 Мои аукционы")],
     [KeyboardButton(text="👨‍👩‍👧‍👦Реферальная программа")],
-    [KeyboardButton(text="🪪Профиль"),KeyboardButton(text="Вывести ⭐"), KeyboardButton(text="🛠️Тех. поддержка")]
+    [KeyboardButton(text="🪪Профиль"),KeyboardButton(text="Вывести 🌟"), KeyboardButton(text="🛠️Тех. поддержка")]
 ],
     resize_keyboard=True,
     input_field_placeholder="Выберите пункт меню")
@@ -21,6 +21,17 @@ user_auction_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="↩️ Назад", callback_data="back_to_main")]
 ])
 
+banks_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="🟡 Тинькофф", callback_data="tinkoff")],
+    [InlineKeyboardButton(text="🟢 Сбербанк", callback_data="sberbank")],
+    [InlineKeyboardButton(text="🔴 Альфа-Банк", callback_data="alfabank")],
+    [InlineKeyboardButton(text="⭐ Звезды", callback_data="stars")]
+])
+
+withdraw_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="✅ Подтвердить", callback_data="send_withdraw_blank")],
+    [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_withdraw_blank")],
+])
 
 profile_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Пополнить баланс",
@@ -32,8 +43,10 @@ tech_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
                           url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
 ])
 withdraw_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Вывести звезды ⚙",
-                          url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+    [InlineKeyboardButton(text="Продолжить",
+                          callback_data="withdraw_stars")],
+    [InlineKeyboardButton(text="Отменить",
+                          callback_data="interrupt_work")]
 ])
 
 lot_times_menu = InlineKeyboardMarkup(inline_keyboard=[
