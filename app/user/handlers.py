@@ -705,10 +705,13 @@ async def my_lots(message: Message):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^next_lot_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
-    await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
     next_lot = await rq.get_next_user_lot(lot_id, cb.from_user.id)
     if next_lot:
+        try:
+            await cb.answer()
+        except Exception as e:
+            logging.warning(f"Не удалось ответить на callback: {e}")
         if next_lot.applicant:
             user = await rq.get_user_data(next_lot.applicant)
         else:
@@ -740,10 +743,13 @@ async def next_user_lot(cb: CallbackQuery):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^prev_lot_\d+$", cb.data))
 async def previous_user_lot(cb: CallbackQuery):
-    await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
     prev_lot = await rq.get_previous_user_lot(lot_id, cb.from_user.id)
     if prev_lot:
+        try:
+            await cb.answer()
+        except Exception as e:
+            logging.warning(f"Не удалось ответить на callback: {e}")
         if prev_lot.applicant:
             user = await rq.get_user_data(prev_lot.applicant)
         else:
@@ -801,10 +807,13 @@ async def my_bids(message: Message):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^next_lot_bid_\d+$", cb.data))
 async def next_user_lot(cb: CallbackQuery):
-    await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
     next_lot = await rq.get_next_user_lot_bid(lot_id, cb.from_user.id)
     if next_lot:
+        try:
+            await cb.answer()
+        except Exception as e:
+            logging.warning(f"Не удалось ответить на callback: {e}")
         seller = await rq.get_user_data(next_lot.seller)
 
         await cb.message.edit_media(media=InputMediaPhoto(
@@ -833,15 +842,18 @@ async def next_user_lot(cb: CallbackQuery):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^prev_lot_bid_\d+$", cb.data))
 async def previous_user_lot(cb: CallbackQuery):
-    await cb.answer()
     lot_id = int(cb.data.split("_")[-1])
     prev_lot = await rq.get_previous_user_lot_bid(lot_id, cb.from_user.id)
     if prev_lot:
+        try:
+            await cb.answer()
+        except Exception as e:
+            logging.warning(f"Не удалось ответить на callback: {e}")
         seller = await rq.get_user_data(prev_lot.seller)
 
         await cb.message.edit_media(media=InputMediaPhoto(
             media=prev_lot.photo_id,
-            ccaption=TEXTS['user_lot_caption_bid'].format(id=prev_lot.id,
+            caption=TEXTS['user_lot_caption_bid'].format(id=prev_lot.id,
                                                      starter_price=prev_lot.starter_price,
                                                      real_price=prev_lot.real_price,
                                                      min_next_price=prev_lot.real_price + 1,
