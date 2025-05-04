@@ -758,7 +758,7 @@ async def previous_user_lot(cb: CallbackQuery):
 
         await cb.message.edit_media(media=InputMediaPhoto(
             media=prev_lot.photo_id,
-            ccaption=TEXTS['user_lot_caption'].format(id=prev_lot.id,
+            caption=TEXTS['user_lot_caption'].format(id=prev_lot.id,
                                                      starter_price=prev_lot.starter_price,
                                                      real_price=prev_lot.real_price,
                                                      min_next_price=prev_lot.real_price + 1,
