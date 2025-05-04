@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from idlelib.window import add_windows_to_menu
 
 from aiogram import F, Router, types
 
