@@ -547,6 +547,7 @@ async def get_receipt_id(cb: CallbackQuery):
     await rq.reject_blank(admin_id=cb.from_user.id, blank_id=blank_id)
     blank = await rq.get_blank_data(blank_id)
     user = await rq.get_user_data_id(blank.user_id)
+    await rq.increase_balance(user.telegram_id, blank.star_amount)
     await cb.answer('❌ Заявка успешно отклонена!')
     await cb.bot.send_message(chat_id=user.telegram_id,
                               text="Ваша заявка была рассмотрена и отклонена, за подробностями обращайтесь в тех. поддержку.")
