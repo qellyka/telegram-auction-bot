@@ -773,7 +773,7 @@ async def previous_user_lot(cb: CallbackQuery):
                                   callback_data=f"prev_lot_{prev_lot.id}"),
             InlineKeyboardButton(text="⏭️ Следующий лот",
                                   callback_data=f"next_lot_{prev_lot.id}")],
-            [InlineKeyboardButton(text="🔚 Завершить модерирование",
+            [InlineKeyboardButton(text="🔚 Завершить просмотр",
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
@@ -868,7 +868,7 @@ async def previous_user_lot(cb: CallbackQuery):
                                   callback_data=f"prev_lot_bid_{prev_lot.id}"),
             InlineKeyboardButton(text="⏭️ Следующий лот",
                                   callback_data=f"next_lot_bid_{prev_lot.id}")],
-            [InlineKeyboardButton(text="🔚 Завершить модерирование",
+            [InlineKeyboardButton(text="🔚 Завершить просмотр",
                                   callback_data="end_moderation")]])
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:

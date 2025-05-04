@@ -41,18 +41,7 @@ async def process_lot(lot: LotBase, bot: Bot):
     if winner:
         lot.status = LotStatus.SOLD
         lot.buyer = winner.telegram_id
-        await bot.send_message(chat_id=winner.telegram_id,
-                               text=TEXTS["you_win_lot"].format(
-                                   id=lot.id,
-                                   username=seller.username
-                               ),
-                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                                [InlineKeyboardButton(text="Подтвердить отправку",
-                                                                      callback_data=f"accept_trade_{lot.id}")],
-                                                [InlineKeyboardButton(text="Открыть спор",
-                                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
-                               ]))
-        await bot.send_message(chat_id=lot.seller,
+        sell_msg = await bot.send_message(chat_id=lot.seller,
                                text=TEXTS["seller_send_gift_msg"].format(
                                    id=lot.id,
                                    username=winner.username
@@ -60,7 +49,18 @@ async def process_lot(lot: LotBase, bot: Bot):
                                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                                 [InlineKeyboardButton(text="Открыть спор",
                                                                       url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
-]))
+                               ]))
+        await bot.send_message(chat_id=winner.telegram_id,
+                               text=TEXTS["you_win_lot"].format(
+                                   id=lot.id,
+                                   username=seller.username
+                               ),
+                               reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                   [InlineKeyboardButton(text="Подтвердить отправку",
+                                                         callback_data=f"accept_trade_{lot.id}_{sell_msg.message_id}")],
+                                   [InlineKeyboardButton(text="Открыть спор",
+                                                         url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+                               ]))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
             message_id=lot.message_id,
