@@ -25,7 +25,7 @@ class BankEnum(enum.Enum):
     TINKOFF = "Tinkoff"
     SBER = "Sberbank"
     ALFA = "AlfaBank"
-    Star = "Star"
+    STAR = "Star"
 
 # ----------------- USERS -----------------
 
