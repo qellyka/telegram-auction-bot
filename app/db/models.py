@@ -103,6 +103,6 @@ class WithdrawalRequest(Base):
     star_amount: Mapped[int]
     receipt_id: Mapped[Optional[str]]
     created_at: Mapped[datetime.datetime]
-    processed_at: Mapped[Optional[str]]
+    processed_at: Mapped[Optional[datetime.datetime]]
     status: Mapped[BlankModStatus]
 
