@@ -265,7 +265,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
 
 @user_router.message(IsUser(), CreateLot.starter_price)
 async def set_lots_photo(message: Message, state: FSMContext):
-    if message.text and message.text.isdigit() and int(message.text) > 0:
+    if message.text and message.text.isdigit() and int(message.text) > 0 and int(message.text) < 2000000:
         await state.update_data(starter_price=int(message.text))
         await state.set_state(CreateLot.blitz_price)
         await message.answer(TEXTS["create_lot_3_msg"])
@@ -275,7 +275,7 @@ async def set_lots_photo(message: Message, state: FSMContext):
 @user_router.message(IsUser(), CreateLot.blitz_price)
 async def set_lots_photo(message: Message, state: FSMContext):
     data = await state.get_data()
-    if message.text and message.text.isdigit() and int(message.text) > data['starter_price']:
+    if message.text and message.text.isdigit() and int(message.text) > data['starter_price'] and int(message.text) < 2000000:
         await state.update_data(blitz_price=int(message.text))
         await state.set_state(CreateLot.completion_time)
         await message.answer(text=TEXTS["create_lot_4_msg"],
