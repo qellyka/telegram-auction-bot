@@ -1,7 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 admin_menu = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="📥 Новые лоты на модерации")],
+    [KeyboardButton(text="📥 Новые лоты на модерации"), KeyboardButton(text="📝 Заявки на вывод средств")],
     [KeyboardButton(text="🧑‍💼 Пользователи"), KeyboardButton(text="🛑 Чёрный список")],
     [KeyboardButton(text="📢 Вопросы пользователей",)]
 ],

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from idlelib.window import add_windows_to_menu
 
 from aiogram import F, Router, types
 
@@ -20,7 +21,7 @@ from app.filters import IsAdmin, IsAdminCb
 
 import app.admin.keyboards as kb
 
-from config import CHANNEL_ID, BOT_ID, status_mapping, TEXTS
+from config import CHANNEL_ID, BOT_ID, status_mapping, TEXTS, blank_bank_mapping, blank_status_mapping
 
 admin_router = Router()
 
@@ -37,6 +38,9 @@ class ManageBalanceD(StatesGroup):
 
 class WarnUser(StatesGroup):
     reason = State()
+
+class ApproveWithdrawal(StatesGroup):
+    photo_id = State()
 
 @admin_router.message(IsAdmin(), Command("menu"))
 async def menu(message: Message):
@@ -442,6 +446,119 @@ async def previous_lot(cb: CallbackQuery):
         await cb.message.edit_reply_markup(reply_markup=keyboard)
     else:
         await cb.answer(TEXTS["reviewed_all_lots_before_this_msg"])
+
+
+@admin_router.message(IsAdmin(), F.text == "📝 Заявки на вывод средств")
+async def new_lots_menu(message: Message):
+    blank = await rq.get_first_new_blank()
+    if blank:
+        user = await rq.get_user_data_id(blank.user_id)
+        await message.answer(text=TEXTS["withdraw_request_admin"].format(
+                                       id=blank.id,
+                                       user_id=user.username,
+                                       bank=blank_bank_mapping.get(blank.bank.value),
+                                       account_number=blank.account_number,
+                                       star_amount=blank.star_amount,
+                                       created_at=blank.created_at,
+                                       processed_block=blank_status_mapping.get(blank.status.value)
+                                   ),
+                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                       [InlineKeyboardButton(text="✅ Одобрить",
+                                                             callback_data=f"approve_blank_{blank.id}")],
+                                       [InlineKeyboardButton(text="❌ Отклонить",
+                                                             callback_data=f"reject_blank_{blank.id}")],
+                                       [InlineKeyboardButton(text="⏮️ Предыдущая заявка",
+                                                             callback_data=f"prev_blank_{blank.id}"),
+                                        InlineKeyboardButton(text="⏭️ Следующая заявка",
+                                                             callback_data=f"next_blank_{blank.id}")],
+                                       [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                                             callback_data="end_moderation")]]),
+                                   parse_mode="HTML")
+    else:
+        await message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_blank_\d+$", cb.data))
+async def approve_lot(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await state.set_state(ApproveWithdrawal.photo_id)
+    blank_id = int(cb.data.split("_")[-1])
+    await state.update_data(blank_id=blank_id)
+    await cb.message.edit_text("Отправьте фото чека перевода.")
+
+@admin_router.message(IsAdmin(), F.photo, ApproveWithdrawal.photo_id)
+async def get_receipt_id(message: Message, state: FSMContext):
+    await state.update_data(photo_id=message.photo[-1].file_id)
+    data = await state.get_data()
+    await rq.approve_blank(photo_id=data['photo_id'], admin_id=message.from_user.id, blank_id=data['blank_id'])
+    blank = await rq.get_blank_data(data['blank_id'])
+    user = await rq.get_user_data_id(blank.user_id)
+    await message.answer('✅ Заявка успешно обработана!')
+    await message.bot.send_photo(chat_id=user.telegram_id,
+                                 photo=blank.receipt_id,
+                                 caption="Ваша заявка была рассмотрена и обработана, выше мы приложили чек для подтверждения перевода.")
+
+    next_blank = await rq.get_next_blank(data['blank_id'])
+    if next_blank:
+        next_user = await rq.get_user_data_id(next_blank.user_id)
+        await message.answer(text=TEXTS["withdraw_request_admin"].format(
+            id=next_blank.id,
+            user_id=next_user.username,
+            bank=blank_bank_mapping.get(next_blank.bank.value),
+            account_number=next_blank.account_number,
+            star_amount=next_blank.star_amount,
+            created_at=next_blank.created_at,
+            processed_block=blank_status_mapping.get(next_blank.status.value)
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Одобрить",
+                                      callback_data=f"approve_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="❌ Отклонить",
+                                      callback_data=f"reject_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущая заявка",
+                                      callback_data=f"prev_blank_{next_blank.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующая заявка",
+                                      callback_data=f"next_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_moderation")]]),
+            parse_mode="HTML")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_blank_\d+$", cb.data))
+async def get_receipt_id(cb: CallbackQuery):
+    await cb.answer()
+    blank_id = int(cb.data.split("_")[-1])
+    await rq.reject_blank(admin_id=cb.from_user.id, blank_id=blank_id)
+    blank = await rq.get_blank_data(blank_id)
+    user = await rq.get_user_data_id(blank.user_id)
+    await cb.answer('❌ Заявка успешно отклонена!')
+    await cb.bot.send_photo(chat_id=user.telegram_id,
+                                 photo=blank.receipt_id,
+                                 caption="Ваша заявка была рассмотрена и отклонена, за подробностями обращайтесь в тех. поддержку.")
+
+    next_blank = await rq.get_next_blank(blank_id)
+    if next_blank:
+        next_user = await rq.get_user_data_id(next_blank.user_id)
+        await cb.message.edit_text(text=TEXTS["withdraw_request_admin"].format(
+            id=next_blank.id,
+            user_id=next_user.username,
+            bank=blank_bank_mapping.get(next_blank.bank.value),
+            account_number=next_blank.account_number,
+            star_amount=next_blank.star_amount,
+            created_at=next_blank.created_at,
+            processed_block=blank_status_mapping.get(next_blank.status.value)
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Одобрить",
+                                      callback_data=f"approve_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="❌ Отклонить",
+                                      callback_data=f"reject_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущая заявка",
+                                      callback_data=f"prev_blank_{next_blank.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующая заявка",
+                                      callback_data=f"next_blank_{next_blank.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_moderation")]]),
+            parse_mode="HTML")
+
 
 @admin_router.callback_query(IsAdminCb(), F.data == "end_moderation")
 async def end_moderation(cb: CallbackQuery):

@@ -21,6 +21,11 @@ class LotModStatus(enum.Enum):
     REJECTED = "REJECTED"
     PENDING = "PENDING"
 
+class BlankModStatus():
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    PENDING = "PENDING"
+
 class BankEnum(enum.Enum):
     TINKOFF = "Tinkoff"
     SBER = "Sberbank"
@@ -99,4 +104,5 @@ class WithdrawalRequest(Base):
     receipt_id: Mapped[Optional[str]]
     created_at: Mapped[datetime.datetime]
     processed_at: Mapped[Optional[str]]
+    status: Mapped[BlankModStatus]
 

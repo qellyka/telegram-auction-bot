@@ -13,7 +13,8 @@ from app.db.models import (
     ReferralBase,
     WarnBase,
     WithdrawalRequest,
-    BankEnum
+    BankEnum,
+    BlankModStatus
 )
 
 # ----------------- LOT FUNCTIONS -----------------
@@ -241,6 +242,10 @@ async def get_user_referral(user_id: int):
 
 # ----------------- WITHDRAWAL BLANKS -----------------
 
+async def get_blank_data(bid: int):
+    async with async_session() as session:
+        return await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.id == bid))
+
 async def add_new_blank(tid: BigInteger ,stars: int, bank: str, number: str):
     async with async_session() as session:
         user = await session.scalar(select(UserBase).where(UserBase.telegram_id == tid).with_for_update())
@@ -249,23 +254,59 @@ async def add_new_blank(tid: BigInteger ,stars: int, bank: str, number: str):
                                           bank=BankEnum.TINKOFF,
                                           account_number=number,
                                           star_amount=stars,
+                                          status=BlankModStatus.PENDING,
                                           created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
         elif bank == "sberbank":
             session.add(WithdrawalRequest(user_id=user.id,
                                           bank=BankEnum.SBER,
                                           account_number=number,
                                           star_amount=stars,
+                                          status=BlankModStatus.PENDING,
                                           created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
         elif bank == "alfabank":
             session.add(WithdrawalRequest(user_id=user.id,
                                           bank=BankEnum.ALFA,
                                           account_number=number,
                                           star_amount=stars,
+                                          status=BlankModStatus.PENDING,
                                           created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
         elif bank == "stars":
             session.add(WithdrawalRequest(user_id=user.id,
                                           bank=BankEnum.STAR,
                                           account_number=number,
                                           star_amount=stars,
+                                          status=BlankModStatus.PENDING,
                                           created_at=datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
+        await session.commit()
+
+async def get_first_new_blank():
+    async with async_session() as session:
+        return await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.status == BlankModStatus.PENDING).order_by(WithdrawalRequest.id.asc()).limit(1))
+
+async def get_next_blank(current_blank_id):
+    async with async_session() as session:
+        return await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.status == BlankModStatus.PENDING, WithdrawalRequest.id > current_blank_id).order_by(WithdrawalRequest.id.asc()).limit(1))
+
+async def get_previous_blank(current_blank_id):
+    async with async_session() as session:
+        return await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.status == BlankModStatus.PENDING, WithdrawalRequest.id < current_blank_id).order_by(WithdrawalRequest.id.desc()).limit(1))
+
+async def approve_blank(photo_id: str, admin_id: BigInteger, blank_id: int):
+    async with async_session() as session:
+        blank = await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.id == blank_id))
+        admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == admin_id))
+        blank.admin_id = admin.id
+        blank.receipt_id = photo_id
+        blank.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
+        blank.status = BlankModStatus.APPROVED
+        await session.commit()
+
+async def reject_blank(admin_id: BigInteger, blank_id: int):
+    async with async_session() as session:
+        blank = await session.scalar(select(WithdrawalRequest).where(WithdrawalRequest.id == blank_id))
+        admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == admin_id))
+        blank.admin_id = admin.id
+        blank.receipt_id = None
+        blank.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
+        blank.status = BlankModStatus.REJECTED
         await session.commit()

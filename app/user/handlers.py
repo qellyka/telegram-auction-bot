@@ -134,8 +134,8 @@ async def withdraw_stars_value(cb: CallbackQuery, state: FSMContext):
 @user_router.message(IsUser(), WithdrawStars.value)
 async def withdraw_stars_bank(message: Message, state: FSMContext):
     user = await rq.get_user_data(message.from_user.id)
-    if user.balance < 100:
-        await message.answer("Вывод средств возможен от 100 звезд.")
+    if user.balance < 50:
+        await message.answer(TEXTS["withdraw_from_50_stars"])
     elif message.text and message.text.isdigit() and int(message.text) <= user.balance and int(message.text) > 0:
         await state.update_data(value=int(message.text))
         await message.answer(TEXTS['choose_bank_msg'],
@@ -200,7 +200,7 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
-    await cb.message.answer('Ваша заявка была отправлена администрации. ДОБАВИТЬ СКОЛЬКО НУЖНО ЖДАТЬ')
+    await cb.message.answer(TEXTS['blank_send_to_administrators'])
     await state.clear()
 
 @user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
