@@ -665,7 +665,7 @@ async def accept_trade(cb: CallbackQuery):
     await cb.message.delete()
     await cb.message.answer("Благодарим вас за покупку, ждём вас сново!")
     await rq.increase_balance(seller.telegram_id, lot.moment_buy_price)
-    msg = await cb.bot.edit_message_text(chat_id=seller.telegram_id,
+    await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                          message_id=int(cb.data.split("_")[-1]),
                                          text=f"Вам переведены звезды в кол-ве {lot.moment_buy_price}🌟, за успешную продажу подарка #{lot.id}. Бладгодарим вас и ждем сново!")
 
