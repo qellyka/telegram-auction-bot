@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 import re
 import string
@@ -123,7 +124,10 @@ async def create_lot(message: Message):
 
 @user_router.callback_query(IsUserCb(), F.data == "withdraw_stars")
 async def withdraw_stars_value(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.answer(TEXTS['write_value_of_stars_msg'])
     await state.set_state(WithdrawStars.value)
 
@@ -142,28 +146,40 @@ async def withdraw_stars_bank(message: Message, state: FSMContext):
 
 @user_router.callback_query(IsUserCb(), F.data == "tinkoff", WithdrawStars.bank)
 async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await state.update_data(bank="tinkoff")
     await cb.message.answer(TEXTS['write_your_account_number'])
     await state.set_state(WithdrawStars.number)
 
 @user_router.callback_query(IsUserCb(), F.data == "sberbank", WithdrawStars.bank)
 async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await state.update_data(bank="sberbank")
     await cb.message.answer(TEXTS['write_your_account_number'])
     await state.set_state(WithdrawStars.number)
 
 @user_router.callback_query(IsUserCb(), F.data == "alfabank", WithdrawStars.bank)
 async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await state.update_data(bank="alfabank")
     await cb.message.answer(TEXTS['write_your_account_number'])
     await state.set_state(WithdrawStars.number)
 
 @user_router.callback_query(IsUserCb(), F.data == "stars", WithdrawStars.bank)
 async def withdraw_stars_number(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await state.update_data(bank="stars")
     await state.update_data(number=cb.from_user.username)
     await cb.message.answer('Подтвердите отправку заявки.',
@@ -177,7 +193,10 @@ async def withdraw_stars_end(message: Message, state: FSMContext):
 
 @user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
 async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     data = await state.get_data()
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
@@ -186,7 +205,10 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
 
 @user_router.callback_query(IsUserCb(), F.data == "send_withdraw_blank")
 async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     msg = await cb.message.answer('Заявка была отменена.')
     await asyncio.sleep(5)
     await msg.delete()
