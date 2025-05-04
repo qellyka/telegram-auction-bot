@@ -42,6 +42,7 @@ class UserBase(Base):
     username: Mapped[str]
     name: Mapped[Optional[str]]
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_withdrawer: Mapped[bool] = mapped_column(Boolean, default=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     balance: Mapped[int] = mapped_column(default=0)

@@ -218,7 +218,7 @@ async def warn_count(tid: BigInteger):
 async def notify_admins(message: str, bot):
     async with async_session() as session:
         admins = await session.scalars(
-            select(UserBase).where(UserBase.is_admin == True)
+            select(UserBase).where(UserBase.is_withdrawer == True)
         )
         for admin in admins:
             try:
