@@ -21,7 +21,7 @@ class LotModStatus(enum.Enum):
     REJECTED = "REJECTED"
     PENDING = "PENDING"
 
-class BlankModStatus():
+class BlankModStatus(enum.Enum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     PENDING = "PENDING"
