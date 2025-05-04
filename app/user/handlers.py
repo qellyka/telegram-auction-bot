@@ -288,7 +288,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours = 1)
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                                   caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -305,7 +308,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     await state.update_data(hours = 2)
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'], pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                                   caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -324,7 +330,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                                   caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -343,7 +352,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                           caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -362,7 +374,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                           caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -381,7 +396,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                           caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -400,7 +418,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                           caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -419,7 +440,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.set_lot(tid=cb.from_user.id, starter_price=data['starter_price'], hours_exp=data['hours'],
                      pid=data['photo_id'], blitz_price=data['blitz_price'])
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await cb.message.delete()
     await cb.message.answer_photo(photo=data['photo_id'],
                           caption=TEXTS["create_lot_end_caption"].format(starter_price=data['starter_price'],
@@ -434,7 +458,10 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
 
 @user_router.callback_query(IsUserCb(), F.data == "deposit_balance")
 async def deposit_balance(cb: CallbackQuery, state: FSMContext):
-    await cb.answer("")
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
     await state.set_state(DepositBalance.number_stars)
     msg = await cb.message.edit_text(text=TEXTS["deposit_balance_msg"].format(star_k=STAR_K),
                                reply_markup=kb.interrupt_work)
