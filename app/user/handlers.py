@@ -675,7 +675,7 @@ async def accept_trade(cb: CallbackQuery):
     await rq.increase_balance(seller.telegram_id, lot.real_price)
     await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                          message_id=int(cb.data.split("_")[-1]),
-                                         text=f"Вам переведены звезды в кол-ве {lot.moment_buy_price}🌟, за успешную продажу подарка #{lot.id}. Бладгодарим вас и ждем сново!")
+                                         text=f"Вам переведены звезды в кол-ве {lot.real_price}🌟, за успешную продажу подарка #{lot.id}. Бладгодарим вас и ждем сново!")
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^deny_trade_\d+_\d+$", cb.data))
 async def deny_trade(cb: CallbackQuery):

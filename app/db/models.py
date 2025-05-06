@@ -38,7 +38,7 @@ class ResultEnum(enum.Enum):
 
 class DisputeStatusEnum(enum.Enum):
     CHECK = "CHECK"
-    UNCHECK = "UNCHECK"
+    PENDING = "PENDING"
 
 
 # ----------------- USERS -----------------
@@ -128,5 +128,5 @@ class DisputeBase(Base):
     created_at: Mapped[datetime.datetime]
     processed_at: Mapped[Optional[datetime.datetime]]
     result: Mapped[Optional[ResultEnum]]
-    status: Mapped[BlankModStatus]
+    status: Mapped[DisputeStatusEnum]
 

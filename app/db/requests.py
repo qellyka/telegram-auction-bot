@@ -349,3 +349,36 @@ async def add_new_dispute(lid: int, umid: int, smid: int):
             user_msg_id = umid,
             created_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
         await session.commit()
+
+async def get_dispute_data(did: int):
+    async with async_session() as session:
+        return await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
+
+async def get_first_new_dispute():
+    async with async_session() as session:
+        return await session.scalar(select(DisputeBase).where(DisputeBase.status == DisputeStatusEnum.PENDING).order_by(DisputeBase.id.asc()).limit(1))
+
+async def get_next_dispute(current_dispute_id):
+    async with async_session() as session:
+        return await session.scalar(select(DisputeBase).where(DisputeBase.status == DisputeStatusEnum.PENDING, DisputeBase.id > current_dispute_id).order_by(DisputeBase.id.asc()).limit(1))
+
+async def get_previous_dispute(current_dispute_id):
+    async with async_session() as session:
+        return await session.scalar(select(DisputeBase).where(DisputeBase.status == DisputeStatusEnum.PENDING, DisputeBase.id < current_dispute_id).order_by(DisputeBase.id.desc()).limit(1))
+
+async def reject_dispute(did: int, aid: BigInteger):
+    async with async_session() as session:
+        dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
+        dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
+        dispute.result = ResultEnum.DECLINE
+        dispute.admin_id = aid
+        await session.commit()
+
+async def approve_dispute(did: int, aid: BigInteger):
+    async with async_session() as session:
+        dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
+        dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
+        dispute.result = ResultEnum.CONFIRM
+        dispute.admin_id = aid
+        await session.commit()
+

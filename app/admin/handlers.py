@@ -486,7 +486,7 @@ async def new_lots_menu(message: Message):
         await message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_blank_\d+$", cb.data))
-async def approve_lot(cb: CallbackQuery, state: FSMContext):
+async def approve_blank(cb: CallbackQuery, state: FSMContext):
     await cb.answer()
     await state.set_state(ApproveWithdrawal.photo_id)
     blank_id = int(cb.data.split("_")[-1])
@@ -533,7 +533,7 @@ async def get_receipt_id(message: Message, state: FSMContext):
         await message.answer("🙅 Новых заявок сейчас нет сейчас нет.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_blank_\d+$", cb.data))
-async def get_receipt_id(cb: CallbackQuery):
+async def reject_blank(cb: CallbackQuery):
     try:
         await cb.answer()
     except Exception as e:
@@ -575,7 +575,7 @@ async def get_receipt_id(cb: CallbackQuery):
         await cb.message.edit_text("🙅 Новых заявок сейчас нет сейчас нет.")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_blank_\d+$", cb.data))
-async def get_receipt_id(cb: CallbackQuery):
+async def next_blank(cb: CallbackQuery):
     try:
         await cb.answer()
     except Exception as e:
@@ -607,7 +607,7 @@ async def get_receipt_id(cb: CallbackQuery):
             parse_mode="HTML")
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_blank_\d+$", cb.data))
-async def get_receipt_id(cb: CallbackQuery):
+async def prev_blank(cb: CallbackQuery):
     try:
         await cb.answer()
     except Exception as e:
@@ -638,6 +638,191 @@ async def get_receipt_id(cb: CallbackQuery):
                                       callback_data="end_blank_moderation")]]),
             parse_mode="HTML")
 
+@admin_router.message(IsAdmin(), F.text == "⚖️ Споры")
+async def see_new_disputes(message: Message):
+    dispute = await rq.get_first_new_dispute()
+    if dispute:
+        user = await rq.get_user_data_id(dispute.user_id)
+        seller = await rq.get_user_data_id(dispute.seller_id)
+        await message.answer(text=TEXTS["dispute_admin"].format(
+            id=dispute.id,
+            user_id=user.username,
+            seller_id = seller.username,
+            lot_id = dispute.lot_id,
+            created_at = dispute.created_at
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Подтвердить отправку",
+                                      callback_data=f"approve_dispute_{dispute.id}")],
+                [InlineKeyboardButton(text="Отклонить отправку",
+                                      callback_data=f"reject_dispute_{dispute.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущий спор",
+                                      callback_data=f"prev_dispute_{dispute.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующий спор",
+                                      callback_data=f"next_dispute_{dispute.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_dispute_moderation")]]),
+            parse_mode="HTML")
+    else:
+        await message.answer("🙅 Новых споров сейчас нет.")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^approve_dispute_\d+$", cb.data))
+async def approve_dispute(cb: CallbackQuery):
+    try:
+        await cb.answer("Спор успешно обработан!")
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    dispute_id = int(cb.data.split("_")[-1])
+    dispute = await rq.get_dispute_data(dispute_id)
+    user = await rq.get_user_data_id(dispute.user_id)
+    seller = await rq.get_user_data_id(dispute.seller_id)
+    lot = await rq.get_lot_data(dispute.lot_id)
+
+    await cb.bot.edit_message_text(chat_id=user.telegram_id,
+                                   message_id=dispute.user_msg_id,
+                                   text="Администратор рассмотрел ваш спор. Вопрос был решен, продавец отправил подарок. Просим прощение за предоставленный дискомфорт.")
+
+    await cb.bot.edit_message_text(chat_id=seller.telegram_id,
+                                   message_id=dispute.seller_msg_id,
+                                   text=f"Администратор рассмотрел спор @{user.username}. Вы отправили подарок. На ваш баланс зачислены звезды в кол-ве {lot.real_price} ")
+    await rq.approve_dispute(dispute_id, cb.from_user.id)
+    await rq.increase_balance(seller.telegram_id, lot.real_price)
+
+    next_dispute = await rq.get_next_dispute(dispute_id)
+    if next_dispute:
+        next_user = await rq.get_user_data_id(next_dispute.user_id)
+        next_seller = await rq.get_user_data_id(next_dispute.seller_id)
+        await cb.message.edit_text(text=TEXTS["dispute_admin"].format(
+            id=next_dispute.id,
+            user_id=next_user.username,
+            seller_id=next_seller.username,
+            lot_id=next_dispute.lot_id,
+            created_at=next_dispute.created_at
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Подтвердить отправку",
+                                      callback_data=f"approve_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="Отклонить отправку",
+                                      callback_data=f"reject_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущий спор",
+                                      callback_data=f"prev_dispute_{next_dispute.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующий спор",
+                                      callback_data=f"next_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_dispute_moderation")]]),
+            parse_mode="HTML")
+    else:
+        await cb.message.edit_text("🙅 Новых споров сейчас нет.")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^reject_dispute_\d+$", cb.data))
+async def reject_dispute(cb: CallbackQuery):
+    try:
+        await cb.answer("Спор успешно обработан!")
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    dispute_id = int(cb.data.split("_")[-1])
+    dispute = await rq.get_dispute_data(dispute_id)
+    user = await rq.get_user_data_id(dispute.user_id)
+    seller = await rq.get_user_data_id(dispute.seller_id)
+    lot = await rq.get_lot_data(dispute.lot_id)
+
+    await cb.bot.edit_message_text(chat_id=user.telegram_id,
+                                   message_id=dispute.user_msg_id,
+                                   text="Администратор рассмотрел ваш спор. Вам вернули звезды на баланс. Продавцу будет выдано предупреждение/бан. Просим прощение за предоставленный дискомфорт.")
+
+    await cb.bot.edit_message_text(chat_id=seller.telegram_id,
+                                   message_id=dispute.seller_msg_id,
+                                   text=f"Администратор рассмотрел спор @{user.username}. Т.к. вы не отправили подарок, вам будем выдано предупреждение/бан в зависимости от того, как посчитает администратор.")
+    await rq.reject_dispute(dispute_id, cb.from_user.id)
+    await rq.increase_balance(user.telegram_id, lot.real_price)
+
+    next_dispute = await rq.get_next_dispute(dispute_id)
+    if next_dispute:
+        next_user = await rq.get_user_data_id(next_dispute.user_id)
+        next_seller = await rq.get_user_data_id(next_dispute.seller_id)
+        await cb.message.edit_text(text=TEXTS["dispute_admin"].format(
+            id=next_dispute.id,
+            user_id=next_user.username,
+            seller_id=next_seller.username,
+            lot_id=next_dispute.lot_id,
+            created_at=next_dispute.created_at
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Подтвердить отправку",
+                                      callback_data=f"approve_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="Отклонить отправку",
+                                      callback_data=f"reject_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущий спор",
+                                      callback_data=f"prev_dispute_{next_dispute.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующий спор",
+                                      callback_data=f"next_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_dispute_moderation")]]),
+            parse_mode="HTML")
+    else:
+        await cb.message.edit_text("🙅 Новых споров сейчас нет.")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^next_dispute_\d+$", cb.data))
+async def next_dispute(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    dispute_id = int(cb.data.split("_")[-1])
+    next_dispute = await rq.get_next_dispute(dispute_id)
+    if next_dispute:
+        next_user = await rq.get_user_data_id(next_dispute.user_id)
+        next_seller = await rq.get_user_data_id(next_dispute.seller_id)
+        await cb.message.edit_text(text=TEXTS["dispute_admin"].format(
+            id=next_dispute.id,
+            user_id=next_user.username,
+            seller_id = next_seller.username,
+            lot_id = next_dispute.lot_id,
+            created_at = next_dispute.created_at
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Подтвердить отправку",
+                                      callback_data=f"approve_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="Отклонить отправку",
+                                      callback_data=f"reject_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущий спор",
+                                      callback_data=f"prev_dispute_{next_dispute.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующий спор",
+                                      callback_data=f"next_dispute_{next_dispute.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_dispute_moderation")]]),
+            parse_mode="HTML")
+
+@admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^prev_blank_\d+$", cb.data))
+async def prev_blank(cb: CallbackQuery):
+    try:
+        await cb.answer()
+    except Exception as e:
+        logging.warning(f"Не удалось ответить на callback: {e}")
+    dispute_id = int(cb.data.split("_")[-1])
+    prev_dispute = await rq.get_previous_dispute(dispute_id)
+    if prev_dispute:
+        prev_user = await rq.get_user_data_id(prev_dispute.user_id)
+        prev_seller = await rq.get_user_data_id(prev_dispute.seller_id)
+        await cb.message.edit_text(text=TEXTS["dispute_admin"].format(
+            id=prev_dispute.id,
+            user_id=prev_user.username,
+            seller_id = prev_seller.username,
+            lot_id = prev_dispute.lot_id,
+            created_at = prev_dispute.created_at
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Подтвердить отправку",
+                                      callback_data=f"approve_dispute_{prev_dispute.id}")],
+                [InlineKeyboardButton(text="Отклонить отправку",
+                                      callback_data=f"reject_dispute_{prev_dispute.id}")],
+                [InlineKeyboardButton(text="⏮️ Предыдущий спор",
+                                      callback_data=f"prev_dispute_{prev_dispute.id}"),
+                 InlineKeyboardButton(text="⏭️ Следующий спор",
+                                      callback_data=f"next_dispute_{prev_dispute.id}")],
+                [InlineKeyboardButton(text="🔚 Завершить модерирование",
+                                      callback_data="end_dispute_moderation")]]),
+            parse_mode="HTML")
 
 @admin_router.callback_query(IsAdminCb(), F.data == "end_moderation")
 async def end_moderation(cb: CallbackQuery):
