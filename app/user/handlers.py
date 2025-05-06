@@ -206,7 +206,7 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
     await cb.message.edit_text(TEXTS['blank_send_to_administrators'])
-    await rq.notify_admins(message=TEXTS['new_withdrawal_notification'], bot=cb.bot)
+    await rq.notify_withdrawers(message=TEXTS['new_withdrawal_notification'], bot=cb.bot)
     await state.clear()
 
 @user_router.callback_query(IsUserCb(), F.data == "cancel_withdraw_blank")
@@ -307,6 +307,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                                   )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 @user_router.callback_query(IsUserCb(), F.data == "two_hour", CreateLot.completion_time)
@@ -327,6 +328,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                                    )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -349,6 +351,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -371,6 +374,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -393,6 +397,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -415,6 +420,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -437,6 +443,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -459,6 +466,7 @@ async def set_lot(cb: CallbackQuery, state: FSMContext):
                                                                                  )
                           )
     await cb.message.answer(TEXTS["create_lot_end_notif_msg"])
+    await rq.notify_admins(TEXTS['new_lot_notification'], cb.bot)
     await state.clear()
 
 
@@ -664,10 +672,33 @@ async def accept_trade(cb: CallbackQuery):
     seller = await rq.get_user_data(lot.seller)
     await cb.message.delete()
     await cb.message.answer("Благодарим вас за покупку, ждём вас сново!")
-    await rq.increase_balance(seller.telegram_id, lot.moment_buy_price)
+    await rq.increase_balance(seller.telegram_id, lot.real_price)
     await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                          message_id=int(cb.data.split("_")[-1]),
                                          text=f"Вам переведены звезды в кол-ве {lot.moment_buy_price}🌟, за успешную продажу подарка #{lot.id}. Бладгодарим вас и ждем сново!")
+
+@user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^deny_trade_\d+_\d+$", cb.data))
+async def deny_trade(cb: CallbackQuery):
+    lot_id = int(cb.data.split("_")[-2])
+    lot = await rq.get_lot_data(lot_id)
+    seller = await rq.get_user_data(lot.seller)
+    await cb.message.delete()
+    user_msg = await cb.message.answer("Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
+                            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
+                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+                            ]))
+    sell_msg = await cb.bot.edit_message_text(chat_id=seller.telegram_id,
+                                   message_id=int(cb.data.split("_")[-1]),
+                                   text=f"@{cb.from_user.username} открыл спор, т.к вы не отправили подарок, если вы отправили подарок, а пользователь не подтвердил отправку, обратитесь в тех. поддержку.",
+                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                       [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
+                                                             url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+                                   ])
+                                   )
+    await rq.notify_admins(TEXTS['new_dispute_notification'], cb.bot)
+    await rq.add_new_dispute(lot_id, user_msg.message_id, sell_msg.message_id)
+
 
 @user_router.message(IsUser(), F.text == "📊 Мои аукционы")
 async def profile(message: Message):

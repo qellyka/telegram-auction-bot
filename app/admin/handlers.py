@@ -46,11 +46,6 @@ async def menu(message: Message):
     await message.answer(text=TEXTS["main_menu_msg"],
                          reply_markup=kb.admin_menu)
 
-@admin_router.message(IsAdmin(), F.text == "📢 Вопросы пользователей")
-async def tech_channel(message: Message):
-    await message.answer(text=TEXTS["tech_channel_msg"],
-                         reply_markup=kb.tech_channel_menu)
-
 @admin_router.message(IsAdmin(), F.text == "🛑 Чёрный список")
 async def view_black_list(message: Message):
     users = await rq.get_blocked_users()

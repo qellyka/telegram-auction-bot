@@ -14,7 +14,10 @@ from app.db.models import (
     WarnBase,
     WithdrawalRequest,
     BankEnum,
-    BlankModStatus
+    BlankModStatus,
+    DisputeBase,
+    ResultEnum,
+    DisputeStatusEnum
 )
 
 # ----------------- LOT FUNCTIONS -----------------
@@ -215,10 +218,21 @@ async def warn_count(tid: BigInteger):
 
         return warning_count
 
-async def notify_admins(message: str, bot):
+async def notify_withdrawers(message: str, bot):
     async with async_session() as session:
         admins = await session.scalars(
             select(UserBase).where(UserBase.is_withdrawer == True)
+        )
+        for admin in admins:
+            try:
+                await bot.send_message(admin.telegram_id, message)
+            except Exception as e:
+                print(f"Не удалось отправить сообщение {admin.telegram_id}: {e}")
+
+async def notify_admins(message: str, bot):
+    async with async_session() as session:
+        admins = await session.scalars(
+            select(UserBase).where(UserBase.is_admin == True)
         )
         for admin in admins:
             try:
@@ -319,4 +333,19 @@ async def reject_blank(admin_id: BigInteger, blank_id: int):
         blank.receipt_id = None
         blank.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
         blank.status = BlankModStatus.REJECTED
+        await session.commit()
+
+# ----------------- DISPUTE FUNCTIONS -----------------
+
+async def add_new_dispute(lid: int, umid: int, smid: int):
+    async with async_session() as session:
+        lot = await session.scalar(select(LotBase).where(LotBase.id == lid).with_for_update())
+        session.add(DisputeBase(
+            user_id = lot.applicant,
+            seller_id = lot.seller,
+            lot_id = lot.id,
+            status = DisputeStatusEnum.UNCHECK,
+            seller_msg_id = smid,
+            user_msg_id = umid,
+            created_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
         await session.commit()

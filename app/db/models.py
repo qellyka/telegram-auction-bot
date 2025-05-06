@@ -32,6 +32,15 @@ class BankEnum(enum.Enum):
     ALFA = "ALFA"
     STAR = "STAR"
 
+class ResultEnum(enum.Enum):
+    CONFIRM = "CONFIRM"
+    DECLINE = "DECLINE"
+
+class DisputeStatusEnum(enum.Enum):
+    CHECK = "CHECK"
+    UNCHECK = "UNCHECK"
+
+
 # ----------------- USERS -----------------
 
 class UserBase(Base):
@@ -105,5 +114,19 @@ class WithdrawalRequest(Base):
     receipt_id: Mapped[Optional[str]]
     created_at: Mapped[datetime.datetime]
     processed_at: Mapped[Optional[datetime.datetime]]
+    status: Mapped[BlankModStatus]
+
+class DisputeBase(Base):
+    __tablename__ = "disputes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    admin_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
+    lot_id: Mapped[int] = mapped_column(ForeignKey("lots.id"))
+    seller_msg_id: Mapped[int]
+    user_msg_id: Mapped[int]
+    created_at: Mapped[datetime.datetime]
+    processed_at: Mapped[Optional[datetime.datetime]]
+    result: Mapped[Optional[ResultEnum]]
     status: Mapped[BlankModStatus]
 

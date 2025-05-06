@@ -59,7 +59,7 @@ async def process_lot(lot: LotBase, bot: Bot):
                                    [InlineKeyboardButton(text="Подтвердить отправку",
                                                          callback_data=f"accept_trade_{lot.id}_{sell_msg.message_id}")],
                                    [InlineKeyboardButton(text="Открыть спор",
-                                                         url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+                                                         callback_data=f"deny_trade_{lot.id}_{sell_msg.message_id}")]
                                ]))
         await bot.edit_message_caption(
             chat_id=f"@{CHANNEL_ID}",
@@ -67,7 +67,7 @@ async def process_lot(lot: LotBase, bot: Bot):
             caption=TEXTS["sold_lot_caption"].format(
                 id=lot.id,
                 starter_price=lot.starter_price,
-                moment_buy_price=lot.moment_buy_price,
+                moment_buy_price=lot.real_price,
                 seller=seller.name,
                 status=status_mapping.get(lot.status.value, "None"),
                 name=winner.name
