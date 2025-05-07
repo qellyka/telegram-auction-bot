@@ -6,6 +6,7 @@ import string
 import types
 
 from aiogram import F, Router, types
+from aiogram.exceptions import TelegramBadRequest
 
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, CallbackQuery, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton, \
@@ -682,7 +683,12 @@ async def deny_trade(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-2])
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
-    await cb.message.delete()
+    try:
+        if cb.message:
+            await cb.message.delete()
+    except TelegramBadRequest as e:
+        if "message to delete not found" not in str(e):
+            raise
     user_msg = await cb.bot.send_message(chat_id=lot.applicant,
                                          text="Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
                                          reply_markup=InlineKeyboardMarkup(inline_keyboard=[
