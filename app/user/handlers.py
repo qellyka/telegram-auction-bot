@@ -683,11 +683,12 @@ async def deny_trade(cb: CallbackQuery):
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
     await cb.message.delete()
-    user_msg = await cb.message.answer("Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
-                            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
-                                                      url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
-                            ]))
+    user_msg = await cb.bot.send_message(chat_id=lot.applicant,
+                                         text="Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
+                                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                             [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
+                                                                   url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
+                                         ]))
     sell_msg = await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                    message_id=int(cb.data.split("_")[-1]),
                                    text=f"@{cb.from_user.username} открыл спор, т.к вы не отправили подарок, если вы отправили подарок, а пользователь не подтвердил отправку, обратитесь в тех. поддержку.",
