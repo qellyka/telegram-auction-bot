@@ -344,7 +344,7 @@ async def add_new_dispute(lid: int, umid: int, smid: int):
             user_id = lot.applicant,
             seller_id = lot.seller,
             lot_id = lot.id,
-            status = DisputeStatusEnum.UNCHECK,
+            status = DisputeStatusEnum.PENDING,
             seller_msg_id = smid,
             user_msg_id = umid,
             created_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)))
