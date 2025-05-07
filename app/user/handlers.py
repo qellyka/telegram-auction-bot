@@ -684,12 +684,12 @@ async def deny_trade(cb: CallbackQuery):
     lot_id = int(cb.data.split("_")[-2])
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
-    try:
-        if cb.message:
+    if cb.message:
+        try:
             await cb.message.delete()
-    except TelegramBadRequest as e:
-        if "message to delete not found" not in str(e):
-            raise
+        except TelegramBadRequest as e:
+            if "message to delete not found" not in str(e) or "message is not modified" not in str(e):
+                raise
     user_msg = await cb.bot.send_message(chat_id=lot.applicant,
                                          text="Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
                                          reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -704,6 +704,7 @@ async def deny_trade(cb: CallbackQuery):
                                                              url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
                                    ])
                                    )
+
     await rq.notify_admins(TEXTS['new_dispute_notification'], cb.bot)
     await rq.add_new_dispute(lot_id, user_msg.message_id, sell_msg.message_id)
 
