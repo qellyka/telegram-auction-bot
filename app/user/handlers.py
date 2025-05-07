@@ -680,6 +680,7 @@ async def accept_trade(cb: CallbackQuery):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^deny_trade_\d+_\d+$", cb.data))
 async def deny_trade(cb: CallbackQuery):
+    await cb.answer()
     lot_id = int(cb.data.split("_")[-2])
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
