@@ -722,6 +722,9 @@ async def reject_dispute(cb: CallbackQuery):
         logging.warning(f"Не удалось ответить на callback: {e}")
     dispute_id = int(cb.data.split("_")[-1])
     dispute = await rq.get_dispute_data(dispute_id)
+    if dispute.result is not None:
+        await cb.message.edit_text("⚠️ Этот спор уже обработан.")
+        return
     user = await rq.get_user_data_id(dispute.user_id)
     seller = await rq.get_user_data_id(dispute.seller_id)
     lot = await rq.get_lot_data(dispute.lot_id)
