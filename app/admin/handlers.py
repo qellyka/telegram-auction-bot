@@ -66,7 +66,8 @@ async def manage_users(message: Message, state: FSMContext):
 async def manage_users_state(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
     data = await state.get_data()
-    lot = await rq.get_lot_data(int(data["username"]))
+    if message.text.isdigit():
+        lot = await rq.get_lot_data(int(data["username"]))
     user = await rq.get_user_by_username(data["username"])
     if lot:
         await message.answer(text="Выберите, кого вы хотите найти: ",
