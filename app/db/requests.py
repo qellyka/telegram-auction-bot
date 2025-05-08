@@ -370,17 +370,19 @@ async def get_previous_dispute(current_dispute_id):
 
 async def reject_dispute(did: int, aid: BigInteger):
     async with async_session() as session:
+        admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == aid))
         dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
         dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
         dispute.result = ResultEnum.DECLINE
-        dispute.admin_id = aid
+        dispute.admin_id = admin.id
         await session.commit()
 
 async def approve_dispute(did: int, aid: BigInteger):
     async with async_session() as session:
+        admin = await session.scalar(select(UserBase).where(UserBase.telegram_id == aid))
         dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
         dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
         dispute.result = ResultEnum.CONFIRM
-        dispute.admin_id = aid
+        dispute.admin_id = admin.id
         await session.commit()
 
