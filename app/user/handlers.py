@@ -687,8 +687,10 @@ async def deny_trade(cb: CallbackQuery):
     if cb.message:
         try:
             await cb.message.delete()
+            await cb.bot.delete_message(chat_id=seller.telegram_id,
+                                        message_id=int(cb.data.split("_")[-1]))
         except TelegramBadRequest as e:
-            if "message to delete not found" not in str(e) or "message is not modified" not in str(e):
+            if "message to delete not found" not in str(e) and "message is not modified" not in str(e):
                 raise
     user_msg = await cb.bot.send_message(chat_id=lot.applicant,
                                          text="Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
@@ -696,8 +698,7 @@ async def deny_trade(cb: CallbackQuery):
                                              [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",
                                                                    url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
                                          ]))
-    sell_msg = await cb.bot.edit_message_text(chat_id=seller.telegram_id,
-                                   message_id=int(cb.data.split("_")[-1]),
+    sell_msg = await cb.bot.send_message(chat_id=seller.telegram_id,
                                    text=f"@{cb.from_user.username} открыл спор, т.к вы не отправили подарок, если вы отправили подарок, а пользователь не подтвердил отправку, обратитесь в тех. поддержку.",
                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                        [InlineKeyboardButton(text="Написать в тех. поддержку ⚙",

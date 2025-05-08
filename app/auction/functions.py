@@ -22,7 +22,7 @@ async def check_expired_lots(bot: Bot):
             .where(
                 LotBase.status == LotStatus.TRADING,
                 LotBase.is_post == LotModStatus.APPROVED,
-                LotBase.expired_at < now
+                LotBase.expired_at <= now
             )
         )
 
