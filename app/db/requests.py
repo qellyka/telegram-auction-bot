@@ -374,6 +374,7 @@ async def reject_dispute(did: int, aid: BigInteger):
         dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
         dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
         dispute.result = ResultEnum.DECLINE
+        dispute.status = DisputeStatusEnum.CHECK
         dispute.admin_id = admin.id
         await session.commit()
 
@@ -383,6 +384,7 @@ async def approve_dispute(did: int, aid: BigInteger):
         dispute = await session.scalar(select(DisputeBase).where(DisputeBase.id == did))
         dispute.processed_at = datetime.now(ZoneInfo("Europe/Moscow")).replace(tzinfo=None)
         dispute.result = ResultEnum.CONFIRM
+        dispute.status = DisputeStatusEnum.CHECK
         dispute.admin_id = admin.id
         await session.commit()
 
