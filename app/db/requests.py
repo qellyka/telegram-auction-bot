@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import uuid
 
-from sqlalchemy import select, int, func
+from sqlalchemy import select, BigInteger, func
 
 from app.db.engine import async_session
 from app.db.models import (
