@@ -172,7 +172,9 @@ async def find_seller(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     lot = await rq.get_lot_data(int(data["username"]))
     user = await rq.get_user_data(lot.applicant)
-    if user.is_banned:
+    if not user:
+        await cb.message.answer("У данного лота нет участников.")
+    elif user.is_banned:
         await cb.message.edit_text(text=TEXTS["user_profile_msg"].format(
             username=user.username,
             lots=user.lots,
