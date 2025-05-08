@@ -68,11 +68,12 @@ async def manage_users_state(message: Message, state: FSMContext):
     data = await state.get_data()
     if message.text.isdigit():
         lot = await rq.get_lot_data(int(data["username"]))
+        if lot:
+            await message.answer(text="Выберите, кого вы хотите найти: ",
+                                 reply_markup=kb.choose_user)
+        return
     user = await rq.get_user_by_username(data["username"])
-    if lot:
-        await message.answer(text="Выберите, кого вы хотите найти: ",
-                             reply_markup=kb.choose_user)
-    elif user and not(user.is_admin):
+    if user and not(user.is_admin):
         if user.is_banned:
             await message.answer(text=TEXTS["user_profile_msg"].format(
                                  username=user.username,
