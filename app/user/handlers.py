@@ -205,7 +205,8 @@ async def send_withdraw_blank(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await rq.decrease_balance(cb.from_user.id, data['value'])
     await rq.add_new_blank(cb.from_user.id, stars=data['value'], bank=data['bank'], number=data['number'])
-    await cb.message.edit_text(TEXTS['blank_send_to_administrators'])
+    await cb.message.edit_text(TEXTS['blank_send_to_administrators'].format(stars = data['value'],
+                                                                            rub = data['value'] * 1.4))
     await rq.notify_withdrawers(message=TEXTS['new_withdrawal_notification'], bot=cb.bot)
     await state.clear()
 

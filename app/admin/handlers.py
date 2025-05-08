@@ -570,6 +570,7 @@ async def new_lots_menu(message: Message):
                                        bank=blank_bank_mapping.get(blank.bank.value),
                                        account_number=blank.account_number,
                                        star_amount=blank.star_amount,
+                                       rub = blank.star_amount * 1.4,
                                        created_at=blank.created_at,
                                        processed_block=blank_status_mapping.get(blank.status.value)
                                    ),
