@@ -337,9 +337,9 @@ async def reject_blank(admin_id: BigInteger, blank_id: int):
 
 # ----------------- DISPUTE FUNCTIONS -----------------
 
-async def add_new_dispute(did: int, umid: int, smid: int):
+async def add_new_dispute(lid: int, umid: int, smid: int):
     async with async_session() as session:
-        lot = await session.scalar(select(DisputeBase).where(DisputeBase.id == did).with_for_update())
+        lot = await session.scalar(select(LotBase).where(LotBase.id == lid).with_for_update())
         applicant = await session.scalar(select(UserBase).where(UserBase.telegram_id == lot.applicant))
         seller = await session.scalar(select(UserBase).where(UserBase.telegram_id == lot.seller))
         session.add(DisputeBase(
