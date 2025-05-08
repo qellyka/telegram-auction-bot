@@ -127,7 +127,7 @@ async def find_seller(cb: CallbackQuery, state: FSMContext):
     lot = await rq.get_lot_data(int(data["username"]))
     user = await rq.get_user_data(lot.seller)
     if user.is_banned:
-        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+        await cb.message.edit_text(text=TEXTS["user_profile_msg"].format(
             username=user.username,
             lots=user.lots,
             balance=user.balance
@@ -147,7 +147,7 @@ async def find_seller(cb: CallbackQuery, state: FSMContext):
         )
         await state.clear()
     else:
-        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+        await cb.message.edit_text(text=TEXTS["user_profile_msg"].format(
             username=user.username,
             lots=user.lots,
             balance=user.balance
@@ -173,7 +173,7 @@ async def find_seller(cb: CallbackQuery, state: FSMContext):
     lot = await rq.get_lot_data(int(data["username"]))
     user = await rq.get_user_data(lot.applicant)
     if user.is_banned:
-        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+        await cb.message.edit_text(text=TEXTS["user_profile_msg"].format(
             username=user.username,
             lots=user.lots,
             balance=user.balance
@@ -193,7 +193,7 @@ async def find_seller(cb: CallbackQuery, state: FSMContext):
         )
         await state.clear()
     else:
-        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+        await cb.message.edit_text(text=TEXTS["user_profile_msg"].format(
             username=user.username,
             lots=user.lots,
             balance=user.balance
