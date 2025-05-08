@@ -3,18 +3,16 @@ import logging
 import random
 import re
 import string
-import types
 
 from aiogram import F, Router, types
 from aiogram.exceptions import TelegramBadRequest
 
 from aiogram.filters import CommandStart, Command, CommandObject
-from aiogram.types import Message, CallbackQuery, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton, \
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, \
     InputMediaPhoto
 
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from sqlalchemy.util import await_only
 
 from app.db.models import LotStatus
 from app.middlewares import UserDBCheckMiddleware, UserBanCheckMiddleware, UserBanCheckMiddlewareCB
@@ -25,11 +23,12 @@ from app.filters import IsUser, IsUserCb
 
 import app.user.keyboards as kb
 
-from config import PAYMENTS_TOKEN, CHANNEL_ID, status_mapping, BOT_ID, TEXTS, STAR_K
+from config import CHANNEL_ID, status_mapping, BOT_ID, TEXTS, STAR_K
 
 from app.user.handler_functions import bid_lot, create_payment_link
 
 user_router = Router()
+logger = logging.getLogger(__name__)
 
 user_router.message.outer_middleware(UserDBCheckMiddleware())
 user_router.message.outer_middleware(UserBanCheckMiddleware())
@@ -680,7 +679,14 @@ async def accept_trade(cb: CallbackQuery):
 
 @user_router.callback_query(IsUserCb(), lambda cb: re.match(r"^deny_trade_\d+_\d+$", cb.data))
 async def deny_trade(cb: CallbackQuery):
-    await cb.answer()
+    try:
+        await cb.answer()
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logger.warning(f"Callback too old: {cb.data}")
+            return
+        else:
+            raise
     lot_id = int(cb.data.split("_")[-2])
     lot = await rq.get_lot_data(lot_id)
     seller = await rq.get_user_data(lot.seller)
@@ -691,6 +697,8 @@ async def deny_trade(cb: CallbackQuery):
                                         message_id=int(cb.data.split("_")[-1]))
         except TelegramBadRequest as e:
             if "message to delete not found" not in str(e) and "message is not modified" not in str(e):
+                return
+            else:
                 raise
     user_msg = await cb.bot.send_message(chat_id=lot.applicant,
                                          text="Вы открыли спор, т.к. вам не отправили подарок. Сообщение было отправлено админу, просим вас также написать в тех. поддержку, чтобы ускорить процесс.",
