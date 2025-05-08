@@ -674,9 +674,15 @@ async def approve_dispute(cb: CallbackQuery):
         logging.warning(f"Не удалось ответить на callback: {e}")
     dispute_id = int(cb.data.split("_")[-1])
     dispute = await rq.get_dispute_data(dispute_id)
+    if dispute.result is not None:
+        await cb.message.edit_text("⚠️ Этот спор уже обработан.")
+        return
     user = await rq.get_user_data_id(dispute.user_id)
     seller = await rq.get_user_data_id(dispute.seller_id)
     lot = await rq.get_lot_data(dispute.lot_id)
+
+    await rq.approve_dispute(dispute_id, cb.from_user.id)
+    await rq.increase_balance(seller.telegram_id, lot.real_price)
 
     await cb.bot.edit_message_text(chat_id=user.telegram_id,
                                    message_id=dispute.user_msg_id,
@@ -685,8 +691,6 @@ async def approve_dispute(cb: CallbackQuery):
     await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                    message_id=dispute.seller_msg_id,
                                    text=f"Администратор рассмотрел спор @{user.username}. Вы отправили подарок. На ваш баланс зачислены звезды в кол-ве {lot.real_price} ")
-    await rq.approve_dispute(dispute_id, cb.from_user.id)
-    await rq.increase_balance(seller.telegram_id, lot.real_price)
 
     next_dispute = await rq.get_next_dispute(dispute_id)
     if next_dispute:
@@ -729,6 +733,9 @@ async def reject_dispute(cb: CallbackQuery):
     seller = await rq.get_user_data_id(dispute.seller_id)
     lot = await rq.get_lot_data(dispute.lot_id)
 
+    await rq.reject_dispute(dispute_id, cb.from_user.id)
+    await rq.increase_balance(user.telegram_id, lot.real_price)
+
     await cb.bot.edit_message_text(chat_id=user.telegram_id,
                                    message_id=dispute.user_msg_id,
                                    text="Администратор рассмотрел ваш спор. Вам вернули звезды на баланс. Продавцу будет выдано предупреждение/бан. Просим прощение за предоставленный дискомфорт.")
@@ -736,8 +743,6 @@ async def reject_dispute(cb: CallbackQuery):
     await cb.bot.edit_message_text(chat_id=seller.telegram_id,
                                    message_id=dispute.seller_msg_id,
                                    text=f"Администратор рассмотрел спор @{user.username}. Т.к. вы не отправили подарок, вам будем выдано предупреждение/бан в зависимости от того, как посчитает администратор.")
-    await rq.reject_dispute(dispute_id, cb.from_user.id)
-    await rq.increase_balance(user.telegram_id, lot.real_price)
 
     next_dispute = await rq.get_next_dispute(dispute_id)
     if next_dispute:
@@ -833,6 +838,14 @@ async def end_moderation(cb: CallbackQuery):
     msg = await cb.message.answer(TEXTS["end_moderation_msg"])
     await asyncio.sleep(5)
     await msg.delete()
+
+@admin_router.callback_query(IsAdminCb(), F.data == "end_dispute_moderation")
+async def end_moderation(cb: CallbackQuery):
+    await cb.message.delete()
+    msg = await cb.message.answer(TEXTS["end_moderation_dispute_msg"])
+    await asyncio.sleep(5)
+    await msg.delete()
+
 
 @admin_router.callback_query(IsAdminCb(), F.data == "end_blank_moderation")
 async def end_moderation(cb: CallbackQuery):
