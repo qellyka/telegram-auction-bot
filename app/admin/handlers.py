@@ -66,8 +66,12 @@ async def manage_users(message: Message, state: FSMContext):
 async def manage_users_state(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
     data = await state.get_data()
+    lot = await rq.get_lot_data(int(data["username"]))
     user = await rq.get_user_by_username(data["username"])
-    if user and not(user.is_admin):
+    if lot:
+        await message.answer(text="Выберите, кого вы хотите найти: ",
+                             reply_markup=kb.choose_user)
+    elif user and not(user.is_admin):
         if user.is_banned:
             await message.answer(text=TEXTS["user_profile_msg"].format(
                                  username=user.username,
@@ -110,8 +114,103 @@ async def manage_users_state(message: Message, state: FSMContext):
             await state.clear()
     elif user and user.is_admin:
         await message.answer(TEXTS["cant_see_admin_account_msg"])
+        await state.clear()
     else:
         await message.answer(TEXTS["user_not_found"])
+        await state.clear()
+
+@admin_router.callback_query(IsAdminCb(), F.data == "find_seller")
+async def find_seller(cb: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lot = await rq.get_lot_data(int(data["username"]))
+    user = await rq.get_user_data(lot.seller)
+    if user.is_banned:
+        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+            username=user.username,
+            lots=user.lots,
+            balance=user.balance
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Разбанить пользователя",
+                                      callback_data=f"unban_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Редактировать баланс",
+                                      callback_data=f"edit_balance_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Выдать предупреждение",
+                                      callback_data=f"warn_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Посмотреть лоты пользователя",
+                                      callback_data=f"user_lots_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Написать пользователю",
+                                      url=f"tg://user?id={user.telegram_id}")],
+            ])
+        )
+        await state.clear()
+    else:
+        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+            username=user.username,
+            lots=user.lots,
+            balance=user.balance
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Забанить пользователя",
+                                      callback_data=f"ban_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Редактировать баланс",
+                                      callback_data=f"edit_balance_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Выдать предупреждение",
+                                      callback_data=f"warn_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Посмотреть лоты пользователя❌",
+                                      callback_data=f"user_lots_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Написать пользователю",
+                                      url=f"tg://user?id={user.telegram_id}")],
+            ])
+        )
+        await state.clear()
+
+@admin_router.callback_query(IsAdminCb(), F.data == "find_applicant")
+async def find_seller(cb: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lot = await rq.get_lot_data(int(data["username"]))
+    user = await rq.get_user_data(lot.applicant)
+    if user.is_banned:
+        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+            username=user.username,
+            lots=user.lots,
+            balance=user.balance
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Разбанить пользователя",
+                                      callback_data=f"unban_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Редактировать баланс",
+                                      callback_data=f"edit_balance_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Выдать предупреждение",
+                                      callback_data=f"warn_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Посмотреть лоты пользователя",
+                                      callback_data=f"user_lots_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Написать пользователю",
+                                      url=f"tg://user?id={user.telegram_id}")],
+            ])
+        )
+        await state.clear()
+    else:
+        await cb.message.answer(text=TEXTS["user_profile_msg"].format(
+            username=user.username,
+            lots=user.lots,
+            balance=user.balance
+        ),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Забанить пользователя",
+                                      callback_data=f"ban_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Редактировать баланс",
+                                      callback_data=f"edit_balance_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Выдать предупреждение",
+                                      callback_data=f"warn_user_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Посмотреть лоты пользователя❌",
+                                      callback_data=f"user_lots_{user.telegram_id}")],
+                [InlineKeyboardButton(text="Написать пользователю",
+                                      url=f"tg://user?id={user.telegram_id}")],
+            ])
+        )
+        await state.clear()
+
 
 @admin_router.callback_query(IsAdminCb(), lambda cb: re.match(r"^edit_balance_\d+$", cb.data))
 async def edit_balance(cb: CallbackQuery):

@@ -16,6 +16,13 @@ tech_bot_menu = InlineKeyboardMarkup(inline_keyboard=[
                           url="https://t.me/auction_saharok_bot?start=auction_saharok_bot")]
 ])
 
+choose_user = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Продавец",
+                          callback_data="find_seller"),
+     InlineKeyboardButton(text="Текущий участник",
+                          callback_data="find_applicant")]
+])
+
 interrupt_work = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Прервать",
                           callback_data="interrupt_work")]

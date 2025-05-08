@@ -147,7 +147,7 @@ TEXTS = {
 
     "banned_list_msg_empty_msg": "✅ Список пуст.",
 
-    "send_user_username_msg": "✍ Введите username пользователя (без @):",
+    "send_user_username_msg": "✍ Введите username пользователя (без @), либо id лота:",
 
     "can't_see_admin_account_msg": "❌ Просмотр профиля администратора запрещён.",
 
