@@ -1,3 +1,5 @@
+# [Deprecated] *telegram-auction-bot* has been archived. [Deprecated] *telegram-auction-bot* will not receive any further updates.
+
 # Telegram Auction Bot 🎁
 
 A Telegram bot for conducting auctions, specializing in the sale of Telegram gifts and other exclusive items between users.
